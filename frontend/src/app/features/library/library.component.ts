@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -23,6 +23,7 @@ import { StoredDocument, PlaybackProgress } from '../../core/models/document.mod
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     ButtonModule,
     CardModule,
     FileUploadModule,

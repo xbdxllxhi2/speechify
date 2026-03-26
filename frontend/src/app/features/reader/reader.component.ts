@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit, OnDestroy, input } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy, input, ViewChild, ElementRef, effect } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -40,6 +40,9 @@ import {
 export class ReaderComponent implements OnInit, OnDestroy {
   readonly id = input.required<string>();
 
+  @ViewChild('progressBar') progressBar!: ElementRef<HTMLDivElement>;
+  @ViewChild('mainContent') mainContent!: ElementRef<HTMLElement>;
+
   private readonly storage = inject(StorageService);
   private readonly audioService = inject(AudioService);
   private readonly api = inject(ApiService);
@@ -47,6 +50,7 @@ export class ReaderComponent implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
   private playbackEndedSub?: Subscription;
   private prefetchSub?: Subscription;
+  private lastScrolledSentenceId: string | null = null;
 
   document = signal<StoredDocument | null>(null);
   currentChapterIndex = signal(0);
@@ -55,6 +59,7 @@ export class ReaderComponent implements OnInit, OnDestroy {
   selectedVoice = signal<Voice>('nova');
   playbackSpeed = signal(1.0);
   continuousMode = signal(true);
+  autoScrollEnabled = signal(true);
 
   // Audio state from service
   isPlaying = this.audioService.isPlaying;
@@ -89,6 +94,17 @@ export class ReaderComponent implements OnInit, OnDestroy {
     { label: '1.5x', value: 1.5 },
     { label: '2x', value: 2.0 },
   ];
+
+  constructor() {
+    // Auto-scroll effect when sentence changes
+    effect(() => {
+      const sentenceId = this.currentSentenceId();
+      if (sentenceId && this.autoScrollEnabled() && sentenceId !== this.lastScrolledSentenceId) {
+        this.lastScrolledSentenceId = sentenceId;
+        this.scrollToSentence(sentenceId);
+      }
+    });
+  }
 
   async ngOnInit(): Promise<void> {
     await this.loadDocument();
@@ -351,6 +367,8 @@ export class ReaderComponent implements OnInit, OnDestroy {
     this.currentChapterIndex.set(index);
     this.currentParagraphIndex.set(0);
     this.audioService.stop();
+    // Scroll to chapter after DOM update
+    setTimeout(() => this.scrollToCurrentParagraph(), 50);
   }
 
   selectParagraph(chapterIndex: number, paragraphIndex: number): void {
@@ -381,5 +399,58 @@ export class ReaderComponent implements OnInit, OnDestroy {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * Handle click on progress bar to seek to that position
+   */
+  onProgressBarClick(event: MouseEvent): void {
+    const bar = this.progressBar?.nativeElement;
+    if (!bar || this.duration() === 0) return;
+
+    const rect = bar.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const percent = clickX / rect.width;
+    const seekTime = percent * this.duration();
+
+    this.audioService.seekTo(seekTime);
+  }
+
+  /**
+   * Toggle auto-scroll feature
+   */
+  toggleAutoScroll(): void {
+    this.autoScrollEnabled.update(v => !v);
+  }
+
+  /**
+   * Scroll to the sentence element smoothly
+   */
+  private scrollToSentence(sentenceId: string): void {
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      const element = document.getElementById(`sentence-${sentenceId}`);
+      if (element) {
+        element.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+    });
+  }
+
+  /**
+   * Scroll to current paragraph
+   */
+  scrollToCurrentParagraph(): void {
+    const chapterIdx = this.currentChapterIndex();
+    const paraIdx = this.currentParagraphIndex();
+    const element = document.getElementById(`para-${chapterIdx}-${paraIdx}`);
+    if (element) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
   }
 }

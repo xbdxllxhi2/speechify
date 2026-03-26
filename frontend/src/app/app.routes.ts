@@ -17,6 +17,11 @@ export const routes: Routes = [
       import('./features/reader/reader.component').then((m) => m.ReaderComponent),
   },
   {
+    path: 'settings',
+    loadComponent: () =>
+      import('./features/settings/settings.component').then((m) => m.SettingsComponent),
+  },
+  {
     path: '**',
     redirectTo: 'library',
   },

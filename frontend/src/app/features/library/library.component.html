@@ -1,17 +1,19 @@
-<div class="min-h-screen bg-white flex flex-col">
+<div class="min-h-screen flex flex-col">
   <p-toast position="top-center" />
   <p-confirmDialog />
 
-  <!-- Mobile Header -->
-  <header class="sticky top-0 z-40 bg-white border-b border-gray-100 safe-area-top">
-    <div class="px-4 py-4 md:px-6 md:py-5">
+  <!-- Header - Glass morphism style -->
+  <header class="sticky top-0 z-40 glass-card border-b border-white/20 safe-area-top">
+    <div class="max-w-6xl mx-auto px-4 py-4 md:px-8">
       <div class="flex items-center justify-between">
         <!-- Logo -->
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center">
-            <i class="pi pi-headphones text-white text-sm md:text-base"></i>
+          <div class="w-10 h-10 md:w-11 md:h-11 rounded-2xl bg-gradient-to-br from-emerald-900 to-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-900/20">
+            <i class="pi pi-headphones text-white text-base md:text-lg"></i>
           </div>
-          <span class="text-xl md:text-2xl font-bold text-gray-900">Listenify</span>
+          <span class="text-xl md:text-2xl font-bold bg-gradient-to-r from-emerald-900 to-emerald-700 bg-clip-text text-transparent">
+            Listenify
+          </span>
         </div>
 
         <!-- Desktop Actions -->
@@ -19,7 +21,7 @@
           @if (documents().length > 0) {
             @if (!isSelectionMode()) {
               <button
-                class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors"
+                class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-emerald-900 hover:bg-emerald-50 rounded-xl transition-all"
                 (click)="toggleSelectionMode()"
               >
                 Select
@@ -27,27 +29,27 @@
             } @else {
               <span class="text-sm text-gray-500 mr-2">{{ selectedDocuments().size }} selected</span>
               <button
-                class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900"
+                class="px-3 py-1.5 text-sm text-gray-600 hover:text-emerald-900"
                 (click)="selectAll()"
               >
                 All
               </button>
               <button
-                class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900"
+                class="px-3 py-1.5 text-sm text-gray-600 hover:text-emerald-900"
                 (click)="deselectAll()"
               >
                 None
               </button>
               @if (selectedDocuments().size > 0) {
                 <button
-                  class="px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors"
+                  class="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-all"
                   (click)="confirmBulkDelete($event)"
                 >
                   Delete
                 </button>
               }
               <button
-                class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-all"
                 (click)="toggleSelectionMode()"
               >
                 Cancel
@@ -64,7 +66,7 @@
             [auto]="true"
             [customUpload]="true"
             (uploadHandler)="onFileUpload($event)"
-            styleClass="!bg-gradient-to-r !from-emerald-600 !to-emerald-700 !border-0 !rounded-xl hover:!shadow-lg hover:!shadow-emerald-500/25 !transition-all"
+            styleClass="!bg-gradient-to-r !from-emerald-900 !to-emerald-700 !border-0 !rounded-xl hover:!shadow-lg hover:!shadow-emerald-900/25 !transition-all"
           />
         </div>
 
@@ -72,7 +74,7 @@
         <div class="flex md:hidden items-center gap-2">
           @if (isSelectionMode()) {
             <button
-              class="p-2 text-emerald-600"
+              class="p-2.5 text-red-600 rounded-xl hover:bg-red-50 transition-colors"
               [class.opacity-50]="selectedDocuments().size === 0"
               [disabled]="selectedDocuments().size === 0"
               (click)="confirmBulkDelete($event)"
@@ -80,14 +82,14 @@
               <i class="pi pi-trash text-lg"></i>
             </button>
             <button
-              class="p-2 text-gray-500"
+              class="p-2.5 text-gray-500 rounded-xl hover:bg-gray-100 transition-colors"
               (click)="toggleSelectionMode()"
             >
               <i class="pi pi-times text-lg"></i>
             </button>
           } @else if (documents().length > 0) {
             <button
-              class="p-2 text-gray-500"
+              class="p-2.5 text-gray-500 rounded-xl hover:bg-gray-100 transition-colors"
               (click)="toggleSelectionMode()"
             >
               <i class="pi pi-check-square text-lg"></i>
@@ -98,10 +100,10 @@
 
       <!-- Mobile Selection Bar -->
       @if (isSelectionMode()) {
-        <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 md:hidden">
+        <div class="flex items-center justify-between mt-3 pt-3 border-t border-emerald-100 md:hidden">
           <span class="text-sm text-gray-500">{{ selectedDocuments().size }} selected</span>
           <div class="flex items-center gap-4">
-            <button class="text-sm text-emerald-600 font-medium" (click)="selectAll()">Select All</button>
+            <button class="text-sm text-emerald-900 font-medium" (click)="selectAll()">Select All</button>
             <button class="text-sm text-gray-500" (click)="deselectAll()">Clear</button>
           </div>
         </div>
@@ -111,18 +113,20 @@
 
   <!-- Upload Progress -->
   @if (isUploading()) {
-    <div class="px-4 py-3 md:px-6 bg-gray-50">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center flex-shrink-0">
-          <i class="pi pi-spin pi-spinner text-white text-sm"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-gray-900 truncate">Processing...</p>
-          <div class="h-1 bg-gray-200 rounded-full mt-1.5 overflow-hidden">
-            <div
-              class="h-full bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-full transition-all duration-300"
-              [style.width.%]="uploadProgress()"
-            ></div>
+    <div class="max-w-6xl mx-auto w-full px-4 md:px-8">
+      <div class="mt-4 p-4 glass-card rounded-2xl">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-900 to-emerald-700 flex items-center justify-center flex-shrink-0">
+            <i class="pi pi-spin pi-spinner text-white"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900 truncate">Processing your document...</p>
+            <div class="h-2 bg-emerald-100 rounded-full mt-2 overflow-hidden">
+              <div
+                class="h-full bg-gradient-to-r from-emerald-900 to-emerald-600 rounded-full transition-all duration-300"
+                [style.width.%]="uploadProgress()"
+              ></div>
+            </div>
           </div>
         </div>
       </div>
@@ -130,26 +134,26 @@
   }
 
   <!-- Main Content -->
-  <main class="flex-1 overflow-auto pb-24 md:pb-8">
+  <main class="flex-1 pb-24 md:pb-8">
     @if (isLoading()) {
       <!-- Loading State -->
-      <div class="flex items-center justify-center h-64">
+      <div class="flex items-center justify-center h-[60vh]">
         <div class="text-center">
-          <div class="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center mb-4">
-            <i class="pi pi-spin pi-spinner text-white text-xl"></i>
+          <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-emerald-900 to-emerald-700 flex items-center justify-center mb-6 shadow-xl shadow-emerald-900/20">
+            <i class="pi pi-spin pi-spinner text-white text-2xl"></i>
           </div>
-          <p class="text-gray-500 text-sm">Loading your library...</p>
+          <p class="text-gray-500">Loading your library...</p>
         </div>
       </div>
     } @else if (documents().length === 0) {
       <!-- Empty State -->
-      <div class="flex flex-col items-center justify-center px-6 py-16 md:py-24">
-        <div class="w-24 h-24 md:w-32 md:h-32 rounded-3xl bg-gradient-to-br from-emerald-100 to-green-100 flex items-center justify-center mb-6">
-          <i class="pi pi-book text-4xl md:text-5xl text-emerald-600"></i>
+      <div class="flex flex-col items-center justify-center px-6 py-20 md:py-32">
+        <div class="w-28 h-28 md:w-36 md:h-36 rounded-[2rem] bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center mb-8 shadow-xl">
+          <i class="pi pi-book text-5xl md:text-6xl text-emerald-900"></i>
         </div>
-        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-2">Your Library</h2>
-        <p class="text-gray-500 text-center max-w-sm mb-8">
-          Add your first document to start listening
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 text-center mb-3">Your Library</h2>
+        <p class="text-gray-500 text-center max-w-md mb-10 text-lg">
+          Upload your first PDF or EPUB to start listening
         </p>
         <p-fileUpload
           mode="basic"
@@ -161,111 +165,111 @@
           [auto]="true"
           [customUpload]="true"
           (uploadHandler)="onFileUpload($event)"
-          styleClass="!bg-gradient-to-r !from-emerald-600 !to-emerald-700 !border-0 !rounded-2xl !px-8 !py-3 hover:!shadow-xl hover:!shadow-emerald-500/30 !transition-all"
+          styleClass="!bg-gradient-to-r !from-emerald-900 !to-emerald-700 !border-0 !rounded-2xl !px-10 !py-4 !text-lg hover:!shadow-2xl hover:!shadow-emerald-900/30 !transition-all hover:!scale-105"
         />
       </div>
     } @else {
       <!-- Library Content -->
-      <div class="px-4 md:px-6 py-4 md:py-6">
-        <!-- Section Title -->
-        <div class="flex items-center justify-between mb-4 md:mb-6">
+      <div class="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10">
+        <!-- Section Header -->
+        <div class="flex items-center justify-between mb-6 md:mb-8">
           <div>
-            <h2 class="text-lg md:text-xl font-bold text-gray-900">Library</h2>
-            <p class="text-xs md:text-sm text-gray-500">{{ documents().length }} item{{ documents().length !== 1 ? 's' : '' }}</p>
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-900">My Library</h2>
+            <p class="text-sm md:text-base text-gray-500 mt-1">
+              {{ documents().length }} document{{ documents().length !== 1 ? 's' : '' }}
+            </p>
           </div>
         </div>
 
         <!-- Document Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
           @for (doc of documents(); track doc.id) {
             <div
-              class="group relative"
+              class="group cursor-pointer"
               (click)="isSelectionMode() ? toggleDocumentSelection(doc.id) : openDocument(doc)"
             >
               <!-- Book Card -->
               <div
-                class="relative bg-white rounded-xl md:rounded-2xl overflow-hidden transition-all duration-200 active:scale-95 md:active:scale-100 md:hover:shadow-md border border-gray-100"
+                class="relative glass-card rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 md:hover:shadow-2xl md:hover:shadow-emerald-900/10 md:hover:-translate-y-1"
                 [class.ring-2]="isSelectionMode() && isDocumentSelected(doc.id)"
-                [class.ring-emerald-500]="isSelectionMode() && isDocumentSelected(doc.id)"
-                [class.shadow-sm]="isSelectionMode() && isDocumentSelected(doc.id)"
+                [class.ring-emerald-600]="isSelectionMode() && isDocumentSelected(doc.id)"
+                [class.shadow-lg]="isSelectionMode() && isDocumentSelected(doc.id)"
               >
-                <!-- Selection Indicator -->
+                <!-- Selection Checkbox -->
                 @if (isSelectionMode()) {
-                  <div class="absolute top-2 right-2 z-20">
+                  <div class="absolute top-3 right-3 z-20">
                     <div
-                      class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
-                      [class.border-emerald-600]="isDocumentSelected(doc.id)"
-                      [class.bg-emerald-600]="isDocumentSelected(doc.id)"
-                      [class.border-gray-300]="!isDocumentSelected(doc.id)"
-                      [class.bg-white]="!isDocumentSelected(doc.id)"
+                      class="w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all shadow-sm"
+                      [class.border-emerald-900]="isDocumentSelected(doc.id)"
+                      [class.bg-emerald-900]="isDocumentSelected(doc.id)"
+                      [class.border-white]="!isDocumentSelected(doc.id)"
+                      [class.bg-white/80]="!isDocumentSelected(doc.id)"
                     >
                       @if (isDocumentSelected(doc.id)) {
-                        <i class="pi pi-check text-white text-xs"></i>
+                        <i class="pi pi-check text-white text-xs font-bold"></i>
                       }
                     </div>
                   </div>
                 }
 
-                <!-- Cover -->
-                <div class="aspect-[3/4] relative overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+                <!-- Cover Image -->
+                <div class="aspect-[3/4] relative overflow-hidden">
                   @if (doc.coverImage) {
                     <img
                       [src]="'data:image/png;base64,' + doc.coverImage"
                       alt="{{ doc.title }}"
-                      class="w-full h-full object-cover"
+                      class="w-full h-full object-cover transition-transform duration-300 md:group-hover:scale-105"
                     />
                   } @else {
-                    <div class="w-full h-full bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700 flex flex-col items-center justify-center p-4">
-                      <i class="pi text-3xl md:text-4xl text-white/90 mb-2" [class.pi-file-pdf]="doc.type === 'pdf'" [class.pi-book]="doc.type === 'epub'"></i>
-                      <span class="text-white/80 text-[10px] md:text-xs font-medium uppercase tracking-wider">{{ doc.type }}</span>
+                    <div class="w-full h-full bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 flex flex-col items-center justify-center p-4">
+                      <i class="pi text-4xl md:text-5xl text-white/80 mb-3" [class.pi-file-pdf]="doc.type === 'pdf'" [class.pi-book]="doc.type === 'epub'"></i>
+                      <span class="text-white/60 text-xs md:text-sm font-medium uppercase tracking-widest">{{ doc.type }}</span>
                     </div>
                   }
 
-                  <!-- Progress Overlay -->
+                  <!-- Progress Bar -->
                   @if (getReadingProgress(doc) > 0) {
-                    <div class="absolute bottom-0 left-0 right-0">
-                      <div class="h-1 bg-black/20">
-                        <div
-                          class="h-full bg-emerald-500"
-                          [style.width.%]="getReadingProgress(doc)"
-                        ></div>
-                      </div>
+                    <div class="absolute bottom-0 left-0 right-0 h-1.5 bg-black/30">
+                      <div
+                        class="h-full bg-gradient-to-r from-emerald-400 to-emerald-500"
+                        [style.width.%]="getReadingProgress(doc)"
+                      ></div>
                     </div>
                   }
 
-                  <!-- Play Button Overlay (Desktop) -->
+                  <!-- Play Overlay (Desktop) -->
                   @if (!isSelectionMode()) {
-                    <div class="hidden md:flex absolute inset-0 items-center justify-center bg-black/0 group-hover:bg-black/30 transition-all duration-200">
-                      <div class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-200 shadow-lg">
-                        <i class="pi pi-play text-emerald-600 text-lg ml-0.5"></i>
+                    <div class="hidden md:flex absolute inset-0 items-center justify-center bg-emerald-900/0 group-hover:bg-emerald-900/40 transition-all duration-300">
+                      <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transform scale-50 group-hover:scale-100 transition-all duration-300 shadow-2xl">
+                        <i class="pi pi-play text-emerald-900 text-xl ml-1"></i>
                       </div>
                     </div>
                   }
                 </div>
 
-                <!-- Info -->
-                <div class="p-2.5 md:p-3">
-                  <h3 class="font-semibold text-gray-900 text-xs md:text-sm leading-tight line-clamp-2 min-h-[2rem] md:min-h-[2.5rem]">
+                <!-- Card Info -->
+                <div class="p-3 md:p-4">
+                  <h3 class="font-semibold text-gray-900 text-sm md:text-base leading-tight line-clamp-2 min-h-[2.5rem] md:min-h-[3rem]">
                     {{ doc.title }}
                   </h3>
                   @if (doc.author) {
-                    <p class="text-[10px] md:text-xs text-gray-500 truncate mt-0.5">{{ doc.author }}</p>
+                    <p class="text-xs md:text-sm text-gray-500 truncate mt-1">{{ doc.author }}</p>
                   }
 
-                  <!-- Actions Row -->
-                  <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+                  <!-- Meta Row -->
+                  <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
                     @if (getReadingProgress(doc) > 0) {
-                      <span class="text-[10px] md:text-xs text-emerald-600 font-medium">{{ getReadingProgress(doc) }}%</span>
+                      <span class="text-xs md:text-sm text-emerald-700 font-semibold">{{ getReadingProgress(doc) }}% complete</span>
                     } @else {
-                      <span class="text-[10px] md:text-xs text-gray-400 uppercase tracking-wide">{{ doc.type }}</span>
+                      <span class="text-xs text-gray-400 uppercase tracking-wide font-medium">{{ doc.type }}</span>
                     }
 
                     @if (!isSelectionMode()) {
                       <button
-                        class="w-6 h-6 md:w-7 md:h-7 -mr-1 rounded-lg flex items-center justify-center text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                        class="w-8 h-8 -mr-1 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                         (click)="confirmDelete(doc, $event)"
                       >
-                        <i class="pi pi-trash text-[10px] md:text-xs"></i>
+                        <i class="pi pi-trash text-xs"></i>
                       </button>
                     }
                   </div>
@@ -278,9 +282,9 @@
     }
   </main>
 
-  <!-- Mobile Floating Action Button -->
+  <!-- Mobile FAB -->
   @if (!isSelectionMode() && documents().length > 0) {
-    <div class="fixed bottom-20 right-4 md:hidden z-50">
+    <div class="fixed bottom-24 right-5 md:hidden z-50">
       <p-fileUpload
         mode="basic"
         name="file"
@@ -291,26 +295,26 @@
         [auto]="true"
         [customUpload]="true"
         (uploadHandler)="onFileUpload($event)"
-        styleClass="!w-14 h-14 [&_.p-button-label]:!hidden [&_.p-button-icon]:!text-xl [&_.p-button-icon]:!mr-0"
+        styleClass="!w-16 !h-16 !rounded-2xl !bg-gradient-to-br !from-emerald-900 !to-emerald-700 !shadow-2xl !shadow-emerald-900/40 [&_.p-button-label]:!hidden [&_.p-button-icon]:!text-2xl [&_.p-button-icon]:!mr-0"
       />
     </div>
   }
 
-  <!-- Mobile Bottom Navigation -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 safe-area-bottom md:hidden z-40">
-    <div class="flex items-center justify-around py-2">
-      <button class="flex flex-col items-center gap-1 px-6 py-2 text-emerald-600">
+  <!-- Mobile Bottom Nav -->
+  <nav class="fixed bottom-0 left-0 right-0 glass-card border-t border-white/20 safe-area-bottom md:hidden z-40">
+    <div class="flex items-center justify-around py-3">
+      <button class="flex flex-col items-center gap-1.5 px-6 py-2 text-emerald-900">
         <i class="pi pi-home text-xl"></i>
-        <span class="text-[10px] font-medium">Library</span>
+        <span class="text-[11px] font-semibold">Library</span>
       </button>
-      <button class="flex flex-col items-center gap-1 px-6 py-2 text-gray-400">
+      <button class="flex flex-col items-center gap-1.5 px-6 py-2 text-gray-400">
         <i class="pi pi-search text-xl"></i>
-        <span class="text-[10px] font-medium">Discover</span>
+        <span class="text-[11px] font-medium">Discover</span>
       </button>
-      <button class="flex flex-col items-center gap-1 px-6 py-2 text-gray-400">
+      <a routerLink="/settings" class="flex flex-col items-center gap-1.5 px-6 py-2 text-gray-400">
         <i class="pi pi-cog text-xl"></i>
-        <span class="text-[10px] font-medium">Settings</span>
-      </button>
+        <span class="text-[11px] font-medium">Settings</span>
+      </a>
     </div>
   </nav>
 </div>

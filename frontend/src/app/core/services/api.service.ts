@@ -8,12 +8,32 @@ export interface TTSResponse {
   audio_base64: string;
   duration: number;
   content_type: string;
+  cached?: boolean;
 }
 
 export interface TTSWithTimingResponse {
   audio_base64: string;
   duration: number;
   timings: SentenceTiming[];
+}
+
+export interface BatchTTSRequest {
+  text: string;
+  voice: Voice;
+  speed: number;
+}
+
+export interface BatchTTSSegment {
+  index: number;
+  audio_base64?: string;
+  duration?: number;
+  content_type?: string;
+  cached?: boolean;
+  error?: string;
+}
+
+export interface BatchTTSResponse {
+  segments: BatchTTSSegment[];
 }
 
 @Injectable({
@@ -74,6 +94,14 @@ export class ApiService {
     return this.http
       .get<{ voices: VoiceOption[] }>(`${this.baseUrl}/tts/voices`)
       .pipe(map((response) => response.voices));
+  }
+
+  /**
+   * Generate multiple audio segments in parallel for reduced latency.
+   * Useful for prefetching multiple paragraphs at once.
+   */
+  batchGenerateSpeech(requests: BatchTTSRequest[]): Observable<BatchTTSResponse> {
+    return this.http.post<BatchTTSResponse>(`${this.baseUrl}/tts/batch-generate`, requests);
   }
 
   healthCheck(): Observable<{ status: string; app: string }> {

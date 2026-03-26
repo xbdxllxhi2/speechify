@@ -1,51 +1,52 @@
-<div class="min-h-screen bg-slate-50 flex flex-col">
+<div class="min-h-screen flex flex-col">
   <p-toast />
 
-  <!-- Header -->
-  <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-4">
-          <p-button
-            icon="pi pi-arrow-left"
-            [text]="true"
-            severity="secondary"
-            (onClick)="goBack()"
+  <!-- Header - Glass morphism -->
+  <header class="sticky top-0 z-40 glass-card border-b border-white/20 safe-area-top">
+    <div class="max-w-7xl mx-auto px-4 md:px-8 py-3 md:py-4">
+      <div class="flex items-center justify-between gap-4">
+        <!-- Back + Title -->
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <button
+            class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-600 hover:text-emerald-900 hover:bg-emerald-50 transition-colors flex-shrink-0"
+            (click)="goBack()"
             pTooltip="Back to Library"
-          />
-          <div>
-            <h1 class="text-lg font-semibold text-slate-900 truncate max-w-md">
+          >
+            <i class="pi pi-arrow-left text-lg"></i>
+          </button>
+          <div class="min-w-0">
+            <h1 class="text-base md:text-lg font-semibold text-gray-900 truncate">
               {{ document()?.title || 'Loading...' }}
             </h1>
             @if (currentChapter()) {
-              <p class="text-sm text-slate-500">{{ currentChapter()?.title }}</p>
+              <p class="text-xs md:text-sm text-gray-500 truncate">{{ currentChapter()?.title }}</p>
             }
           </div>
         </div>
 
-        <!-- Voice & Speed Controls -->
-        <div class="flex items-center gap-4">
+        <!-- Voice & Speed Controls (Desktop) -->
+        <div class="hidden lg:flex items-center gap-4">
           <div class="flex items-center gap-2">
-            <label class="text-sm text-slate-600">Voice:</label>
+            <label class="text-sm text-gray-600 font-medium">Voice:</label>
             <p-select
               [options]="voices()"
               [ngModel]="selectedVoice()"
               (ngModelChange)="onVoiceChange($event)"
               optionLabel="name"
               optionValue="id"
-              styleClass="w-32"
+              styleClass="w-36"
               [appendTo]="'body'"
             />
           </div>
           <div class="flex items-center gap-2">
-            <label class="text-sm text-slate-600">Speed:</label>
+            <label class="text-sm text-gray-600 font-medium">Speed:</label>
             <p-select
               [options]="speedOptions"
               [ngModel]="playbackSpeed()"
               (ngModelChange)="onSpeedChange($event)"
               optionLabel="label"
               optionValue="value"
-              styleClass="w-24"
+              styleClass="w-28"
               [appendTo]="'body'"
             />
           </div>
@@ -55,56 +56,60 @@
   </header>
 
   <!-- Main Content -->
-  <div class="flex-1 flex">
-    <!-- Sidebar - Chapter List -->
-    <aside class="w-64 bg-white border-r border-slate-200 overflow-y-auto hidden lg:block">
-      <div class="p-4">
-        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Chapters</h3>
+  <div class="flex-1 flex overflow-hidden">
+    <!-- Sidebar - Chapter List (Desktop) - Fixed height, independent scroll -->
+    <aside class="w-72 glass-card border-r border-white/20 hidden lg:flex lg:flex-col" style="height: calc(100vh - 65px);">
+      <div class="flex-1 overflow-y-auto p-5">
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 sticky top-0 bg-white/80 backdrop-blur py-2 -mt-2">Chapters</h3>
         <nav class="space-y-1">
           @for (chapter of document()?.chapters; track chapter.id; let i = $index) {
             <button
-              class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors"
-              [class.bg-blue-50]="currentChapterIndex() === i"
-              [class.text-blue-700]="currentChapterIndex() === i"
-              [class.text-slate-700]="currentChapterIndex() !== i"
-              [class.hover:bg-slate-100]="currentChapterIndex() !== i"
+              class="w-full text-left px-4 py-3 rounded-xl text-sm transition-all"
+              [class.bg-emerald-100]="currentChapterIndex() === i"
+              [class.text-emerald-900]="currentChapterIndex() === i"
+              [class.font-semibold]="currentChapterIndex() === i"
+              [class.text-gray-700]="currentChapterIndex() !== i"
+              [class.hover:bg-gray-100]="currentChapterIndex() !== i"
               (click)="selectChapter(i)"
             >
               <span class="truncate block">{{ chapter.title }}</span>
-              <span class="text-xs text-slate-400">{{ chapter.paragraphs.length }} paragraphs</span>
+              <span class="text-xs text-gray-400 mt-0.5 block">{{ chapter.paragraphs.length }} paragraphs</span>
             </button>
           }
         </nav>
       </div>
     </aside>
 
-    <!-- Text Content -->
-    <main class="flex-1 overflow-y-auto pb-32">
-      <div class="max-w-3xl mx-auto px-6 py-8">
+    <!-- Text Content - Independent scroll -->
+    <main #mainContent class="flex-1 overflow-y-auto pb-44 md:pb-40" style="height: calc(100vh - 65px);">
+      <div class="max-w-3xl mx-auto px-5 md:px-8 py-6 md:py-10">
         @if (document()) {
           @for (chapter of document()!.chapters; track chapter.id; let chapterIdx = $index) {
             <div
-              class="mb-12"
-              [class.opacity-50]="chapterIdx !== currentChapterIndex()"
+              [id]="'chapter-' + chapterIdx"
+              class="mb-16"
+              [class.opacity-40]="chapterIdx !== currentChapterIndex()"
             >
               <!-- Chapter Title -->
-              <h2 class="text-2xl font-bold text-slate-900 mb-6 pb-3 border-b border-slate-200">
+              <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-8 pb-4 border-b-2 border-emerald-200">
                 {{ chapter.title }}
               </h2>
 
               <!-- Paragraphs -->
               @for (paragraph of chapter.paragraphs; track paragraph.id; let paraIdx = $index) {
                 <div
-                  class="mb-6 p-4 rounded-lg transition-all cursor-pointer"
-                  [class.bg-blue-50]="chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex()"
+                  [id]="'para-' + chapterIdx + '-' + paraIdx"
+                  class="mb-6 p-4 md:p-5 rounded-xl transition-all cursor-pointer scroll-mt-24"
+                  [class.bg-emerald-50]="chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex()"
                   [class.border-l-4]="chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex()"
-                  [class.border-blue-500]="chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex()"
-                  [class.hover:bg-slate-100]="!(chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex())"
+                  [class.border-emerald-600]="chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex()"
+                  [class.shadow-md]="chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex()"
+                  [class.hover:bg-gray-50]="!(chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex())"
                   (click)="selectParagraph(chapterIdx, paraIdx)"
                 >
                   @if (paragraph.isHeading) {
                     <h3
-                      class="font-semibold"
+                      class="font-bold text-gray-900"
                       [class.text-xl]="paragraph.headingLevel === 1"
                       [class.text-lg]="paragraph.headingLevel === 2"
                       [class.text-base]="paragraph.headingLevel && paragraph.headingLevel > 2"
@@ -112,10 +117,11 @@
                       {{ paragraph.text }}
                     </h3>
                   } @else {
-                    <p class="text-slate-700 leading-relaxed">
+                    <p class="text-gray-700 leading-relaxed text-base md:text-lg">
                       @for (sentence of paragraph.sentences; track sentence.id) {
                         <span
-                          class="sentence"
+                          [id]="'sentence-' + sentence.id"
+                          class="sentence scroll-mt-32"
                           [class.active]="isSentenceActive(sentence.id)"
                           (click)="onSentenceClick(sentence.id); $event.stopPropagation()"
                         >{{ sentence.text }} </span>
@@ -124,7 +130,7 @@
                   }
 
                   @if (paragraph.page) {
-                    <span class="text-xs text-slate-400 mt-2 block">Page {{ paragraph.page }}</span>
+                    <span class="text-xs text-gray-400 mt-3 block">Page {{ paragraph.page }}</span>
                   }
                 </div>
               }
@@ -132,12 +138,12 @@
           }
         } @else {
           <!-- Loading State -->
-          <div class="space-y-6">
+          <div class="space-y-8">
             @for (i of [1, 2, 3, 4, 5]; track i) {
               <div class="animate-pulse">
-                <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
-                <div class="h-4 bg-slate-200 rounded w-full mb-2"></div>
-                <div class="h-4 bg-slate-200 rounded w-5/6"></div>
+                <div class="h-5 bg-emerald-100 rounded-lg w-3/4 mb-3"></div>
+                <div class="h-4 bg-gray-200 rounded-lg w-full mb-2"></div>
+                <div class="h-4 bg-gray-200 rounded-lg w-5/6"></div>
               </div>
             }
           </div>
@@ -147,78 +153,136 @@
   </div>
 
   <!-- Fixed Audio Player Bar -->
-  <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <!-- Progress Bar -->
-      <div class="mb-3">
-        <div class="flex items-center gap-2 text-xs text-slate-500 mb-1">
-          <span>{{ formatTime(currentTime()) }}</span>
-          <div class="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden cursor-pointer">
+  <footer class="fixed bottom-0 left-0 right-0 glass-card border-t border-white/20 shadow-2xl z-20 safe-area-bottom">
+    <div class="max-w-4xl mx-auto px-4 md:px-8 py-4 md:py-5">
+      <!-- Mobile Voice/Speed Controls -->
+      <div class="flex items-center justify-center gap-4 mb-4 lg:hidden">
+        <div class="flex items-center gap-2">
+          <label class="text-xs text-gray-500">Voice:</label>
+          <p-select
+            [options]="voices()"
+            [ngModel]="selectedVoice()"
+            (ngModelChange)="onVoiceChange($event)"
+            optionLabel="name"
+            optionValue="id"
+            styleClass="w-28 !text-sm"
+            [appendTo]="'body'"
+          />
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-xs text-gray-500">Speed:</label>
+          <p-select
+            [options]="speedOptions"
+            [ngModel]="playbackSpeed()"
+            (ngModelChange)="onSpeedChange($event)"
+            optionLabel="label"
+            optionValue="value"
+            styleClass="w-20 !text-sm"
+            [appendTo]="'body'"
+          />
+        </div>
+      </div>
+
+      <!-- Progress Bar - Clickable -->
+      <div class="mb-4">
+        <div class="flex items-center gap-3 text-xs text-gray-500">
+          <span class="w-10 text-right font-medium">{{ formatTime(currentTime()) }}</span>
+          <div
+            #progressBar
+            class="flex-1 h-3 bg-emerald-100 rounded-full overflow-hidden cursor-pointer relative group"
+            (click)="onProgressBarClick($event)"
+          >
             <div
-              class="h-full bg-blue-500 rounded-full transition-all"
+              class="h-full bg-gradient-to-r from-emerald-900 to-emerald-600 rounded-full transition-all pointer-events-none"
               [style.width.%]="progressPercent()"
             ></div>
+            <!-- Hover indicator -->
+            <div class="absolute inset-0 bg-emerald-200/0 group-hover:bg-emerald-200/30 transition-colors rounded-full"></div>
           </div>
-          <span>{{ formatTime(duration()) }}</span>
+          <span class="w-10 font-medium">{{ formatTime(duration()) }}</span>
         </div>
       </div>
 
       <!-- Controls -->
-      <div class="flex items-center justify-center gap-4">
-        <p-button
-          icon="pi pi-step-backward"
-          [text]="true"
-          severity="secondary"
-          size="large"
-          (onClick)="previousParagraph()"
+      <div class="flex items-center justify-center gap-2 md:gap-4">
+        <button
+          class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:text-emerald-900 hover:bg-emerald-50 transition-colors"
+          (click)="previousParagraph()"
           pTooltip="Previous paragraph"
-        />
-        <p-button
-          icon="pi pi-replay"
-          [text]="true"
-          severity="secondary"
-          (onClick)="skipBack()"
+        >
+          <i class="pi pi-step-backward text-lg"></i>
+        </button>
+        <button
+          class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:text-emerald-900 hover:bg-emerald-50 transition-colors"
+          (click)="skipBack()"
           pTooltip="Back 10s"
-        />
-        <p-button
-          [icon]="isPlaying() ? 'pi pi-pause' : 'pi pi-play'"
-          severity="primary"
-          [rounded]="true"
-          [raised]="true"
-          (onClick)="togglePlayback()"
-          [loading]="isLoading()"
-          styleClass="w-14 h-14"
-        />
-        <p-button
-          icon="pi pi-forward"
-          [text]="true"
-          severity="secondary"
-          (onClick)="skipForward()"
+        >
+          <i class="pi pi-replay text-lg"></i>
+        </button>
+
+        <!-- Main Play Button -->
+        <button
+          class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-900 to-emerald-700 flex items-center justify-center text-white shadow-xl shadow-emerald-900/30 hover:shadow-2xl hover:shadow-emerald-900/40 transition-all hover:scale-105 active:scale-95 mx-2"
+          (click)="togglePlayback()"
+          [disabled]="isLoading()"
+        >
+          @if (isLoading()) {
+            <i class="pi pi-spin pi-spinner text-2xl"></i>
+          } @else {
+            <i class="pi text-2xl" [class.pi-play]="!isPlaying()" [class.pi-pause]="isPlaying()" [class.ml-1]="!isPlaying()"></i>
+          }
+        </button>
+
+        <button
+          class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:text-emerald-900 hover:bg-emerald-50 transition-colors"
+          (click)="skipForward()"
           pTooltip="Forward 10s"
-        />
-        <p-button
-          icon="pi pi-step-forward"
-          [text]="true"
-          severity="secondary"
-          size="large"
-          (onClick)="nextParagraph()"
+        >
+          <i class="pi pi-forward text-lg"></i>
+        </button>
+        <button
+          class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:text-emerald-900 hover:bg-emerald-50 transition-colors"
+          (click)="nextParagraph()"
           pTooltip="Next paragraph"
-        />
-        <div class="border-l border-slate-300 h-8 mx-2"></div>
-        <p-button
-          [icon]="continuousMode() ? 'pi pi-sync' : 'pi pi-stop-circle'"
-          [text]="true"
-          [severity]="continuousMode() ? 'primary' : 'secondary'"
-          (onClick)="toggleContinuousMode()"
-          [pTooltip]="continuousMode() ? 'Continuous mode ON - will auto-play next' : 'Continuous mode OFF - stops after each paragraph'"
-        />
+        >
+          <i class="pi pi-step-forward text-lg"></i>
+        </button>
+
+        <div class="w-px h-8 bg-gray-200 mx-1 md:mx-2"></div>
+
+        <button
+          class="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+          [class.text-emerald-900]="continuousMode()"
+          [class.bg-emerald-100]="continuousMode()"
+          [class.text-gray-400]="!continuousMode()"
+          [class.hover:text-emerald-900]="!continuousMode()"
+          [class.hover:bg-emerald-50]="!continuousMode()"
+          (click)="toggleContinuousMode()"
+          [pTooltip]="continuousMode() ? 'Continuous mode ON' : 'Continuous mode OFF'"
+        >
+          <i class="pi text-lg" [class.pi-sync]="continuousMode()" [class.pi-stop-circle]="!continuousMode()"></i>
+        </button>
+
+        <!-- Auto-scroll toggle -->
+        <button
+          class="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+          [class.text-emerald-900]="autoScrollEnabled()"
+          [class.bg-emerald-100]="autoScrollEnabled()"
+          [class.text-gray-400]="!autoScrollEnabled()"
+          [class.hover:text-emerald-900]="!autoScrollEnabled()"
+          [class.hover:bg-emerald-50]="!autoScrollEnabled()"
+          (click)="toggleAutoScroll()"
+          [pTooltip]="autoScrollEnabled() ? 'Auto-scroll ON' : 'Auto-scroll OFF'"
+        >
+          <i class="pi pi-arrows-v text-lg"></i>
+        </button>
       </div>
 
-      <!-- Current Paragraph Info -->
+      <!-- Current Paragraph Preview -->
       @if (currentParagraph()) {
-        <div class="text-center mt-3">
-          <p class="text-sm text-slate-500 truncate max-w-lg mx-auto">
-            {{ currentParagraph()!.text.substring(0, 100) }}{{ currentParagraph()!.text.length > 100 ? '...' : '' }}
+        <div class="text-center mt-4 px-4">
+          <p class="text-sm text-gray-500 truncate max-w-xl mx-auto">
+            {{ currentParagraph()!.text.substring(0, 80) }}{{ currentParagraph()!.text.length > 80 ? '...' : '' }}
           </p>
         </div>
       }

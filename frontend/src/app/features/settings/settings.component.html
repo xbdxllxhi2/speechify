@@ -1,0 +1,170 @@
+<div class="min-h-screen flex flex-col">
+  <p-toast position="top-center" />
+  <p-confirmDialog />
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 glass-card border-b border-white/20 safe-area-top">
+    <div class="max-w-2xl mx-auto px-4 py-4 md:px-8">
+      <div class="flex items-center gap-4">
+        <button
+          class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-600 hover:text-emerald-900 hover:bg-emerald-50 transition-colors"
+          (click)="goBack()"
+        >
+          <i class="pi pi-arrow-left text-lg"></i>
+        </button>
+        <h1 class="text-xl md:text-2xl font-bold text-gray-900">Settings</h1>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 pb-24 md:pb-8">
+    <div class="max-w-2xl mx-auto px-4 md:px-8 py-6 md:py-10">
+
+      <!-- Playback Settings -->
+      <section class="mb-8">
+        <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Playback</h2>
+        <div class="glass-card rounded-2xl overflow-hidden divide-y divide-gray-100">
+
+          <!-- Default Voice -->
+          <div class="p-4 md:p-5 flex items-center justify-between gap-4">
+            <div class="min-w-0">
+              <h3 class="font-semibold text-gray-900">Default Voice</h3>
+              <p class="text-sm text-gray-500 mt-0.5">Voice used for text-to-speech</p>
+            </div>
+            <p-select
+              [options]="voices()"
+              [ngModel]="selectedVoice()"
+              (ngModelChange)="onVoiceChange($event)"
+              optionLabel="name"
+              optionValue="id"
+              styleClass="w-36"
+              [appendTo]="'body'"
+            />
+          </div>
+
+          <!-- Default Speed -->
+          <div class="p-4 md:p-5 flex items-center justify-between gap-4">
+            <div class="min-w-0">
+              <h3 class="font-semibold text-gray-900">Playback Speed</h3>
+              <p class="text-sm text-gray-500 mt-0.5">Default audio playback speed</p>
+            </div>
+            <p-select
+              [options]="speedOptions"
+              [ngModel]="playbackSpeed()"
+              (ngModelChange)="onSpeedChange($event)"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-28"
+              [appendTo]="'body'"
+            />
+          </div>
+
+          <!-- Auto Play -->
+          <div class="p-4 md:p-5 flex items-center justify-between gap-4">
+            <div class="min-w-0">
+              <h3 class="font-semibold text-gray-900">Auto Play</h3>
+              <p class="text-sm text-gray-500 mt-0.5">Automatically play next paragraph</p>
+            </div>
+            <p-toggleSwitch
+              [ngModel]="autoPlay()"
+              (ngModelChange)="onAutoPlayChange($event)"
+            />
+          </div>
+
+          <!-- Highlight Mode -->
+          <div class="p-4 md:p-5 flex items-center justify-between gap-4">
+            <div class="min-w-0">
+              <h3 class="font-semibold text-gray-900">Highlight Mode</h3>
+              <p class="text-sm text-gray-500 mt-0.5">How text is highlighted during playback</p>
+            </div>
+            <p-select
+              [options]="highlightOptions"
+              [ngModel]="highlightMode()"
+              (ngModelChange)="onHighlightModeChange($event)"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-32"
+              [appendTo]="'body'"
+            />
+          </div>
+        </div>
+      </section>
+
+      <!-- Storage Settings -->
+      <section class="mb-8">
+        <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Storage</h2>
+        <div class="glass-card rounded-2xl overflow-hidden divide-y divide-gray-100">
+
+          <!-- Storage Stats -->
+          <div class="p-4 md:p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-900">Audio Cache</h3>
+              <span class="text-sm font-medium text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
+                {{ formatBytes(storageStats().audioCacheSize) }}
+              </span>
+            </div>
+            <p class="text-sm text-gray-500 mb-4">
+              Cached audio for {{ storageStats().documentsCount }} document{{ storageStats().documentsCount !== 1 ? 's' : '' }}
+            </p>
+            <button
+              class="w-full py-3 px-4 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors flex items-center justify-center gap-2"
+              [disabled]="isClearing()"
+              (click)="confirmClearCache($event)"
+            >
+              @if (isClearing()) {
+                <i class="pi pi-spin pi-spinner"></i>
+                <span>Clearing...</span>
+              } @else {
+                <i class="pi pi-trash"></i>
+                <span>Clear Audio Cache</span>
+              }
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Reset Settings -->
+      <section class="mb-8">
+        <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Advanced</h2>
+        <div class="glass-card rounded-2xl overflow-hidden">
+          <div class="p-4 md:p-5">
+            <button
+              class="w-full py-3 px-4 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors flex items-center justify-center gap-2"
+              (click)="resetSettings()"
+            >
+              <i class="pi pi-refresh"></i>
+              <span>Reset to Defaults</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- App Info -->
+      <section>
+        <div class="text-center text-sm text-gray-400">
+          <p class="mb-1">Listenify v1.0.0</p>
+          <p>Made with <i class="pi pi-heart text-red-400"></i> for readers</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Mobile Bottom Nav -->
+  <nav class="fixed bottom-0 left-0 right-0 glass-card border-t border-white/20 safe-area-bottom md:hidden z-40">
+    <div class="flex items-center justify-around py-3">
+      <button class="flex flex-col items-center gap-1.5 px-6 py-2 text-gray-400" routerLink="/library">
+        <i class="pi pi-home text-xl"></i>
+        <span class="text-[11px] font-medium">Library</span>
+      </button>
+      <button class="flex flex-col items-center gap-1.5 px-6 py-2 text-gray-400">
+        <i class="pi pi-search text-xl"></i>
+        <span class="text-[11px] font-medium">Discover</span>
+      </button>
+      <button class="flex flex-col items-center gap-1.5 px-6 py-2 text-emerald-900">
+        <i class="pi pi-cog text-xl"></i>
+        <span class="text-[11px] font-semibold">Settings</span>
+      </button>
+    </div>
+  </nav>
+</div>
