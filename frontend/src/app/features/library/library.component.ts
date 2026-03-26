@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -49,6 +49,27 @@ export class LibraryComponent implements OnInit {
   isUploading = signal(false);
   selectedDocuments = signal<Set<string>>(new Set());
   isSelectionMode = signal(false);
+
+  // Computed: Recent documents (last 5 by play time, with progress > 0)
+  recentDocuments = computed(() => {
+    return this.documents()
+      .filter(doc => this.getReadingProgress(doc) > 0)
+      .sort((a, b) => {
+        const aTime = new Date(a.progress.lastPlayedAt).getTime();
+        const bTime = new Date(b.progress.lastPlayedAt).getTime();
+        return bTime - aTime; // Most recent first
+      })
+      .slice(0, 5);
+  });
+
+  // Computed: All documents sorted by creation date (newest first)
+  allDocumentsSorted = computed(() => {
+    return [...this.documents()].sort((a, b) => {
+      const aTime = new Date(a.createdAt).getTime();
+      const bTime = new Date(b.createdAt).getTime();
+      return bTime - aTime;
+    });
+  });
 
   ngOnInit(): void {
     this.loadDocuments();

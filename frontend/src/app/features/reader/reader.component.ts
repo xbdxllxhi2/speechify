@@ -20,6 +20,7 @@ import {
   Paragraph,
   Voice,
   VoiceOption,
+  TOCEntry,
 } from '../../core/models/document.model';
 
 @Component({
@@ -86,6 +87,17 @@ export class ReaderComponent implements OnInit, OnDestroy {
     return Math.round((this.currentTime() / dur) * 100);
   });
 
+  // Use TOC if available, otherwise use chapters
+  hasToc = computed(() => {
+    const doc = this.document();
+    return doc?.toc && doc.toc.length > 0;
+  });
+
+  tocEntries = computed(() => {
+    const doc = this.document();
+    return doc?.toc || [];
+  });
+
   speedOptions = [
     { label: '0.5x', value: 0.5 },
     { label: '0.75x', value: 0.75 },
@@ -107,6 +119,9 @@ export class ReaderComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
+    // Reset audio service to clear any previous document's state
+    this.audioService.reset();
+
     await this.loadDocument();
     await this.loadVoices();
     await this.loadSettings();
@@ -369,6 +384,26 @@ export class ReaderComponent implements OnInit, OnDestroy {
     this.audioService.stop();
     // Scroll to chapter after DOM update
     setTimeout(() => this.scrollToCurrentParagraph(), 50);
+  }
+
+  selectTocEntry(entry: TOCEntry, index: number): void {
+    // For EPUBs, TOC entries may have href that maps to chapters
+    // We'll use the index as a simple mapping for now
+    // A more sophisticated approach would match href to chapter IDs
+    const doc = this.document();
+    if (!doc) return;
+
+    // Try to find matching chapter by title or use index
+    let chapterIndex = doc.chapters.findIndex(
+      ch => ch.title.toLowerCase().includes(entry.title.toLowerCase().slice(0, 20))
+    );
+
+    if (chapterIndex === -1) {
+      // Fall back to using index (limited to available chapters)
+      chapterIndex = Math.min(index, doc.chapters.length - 1);
+    }
+
+    this.selectChapter(chapterIndex);
   }
 
   selectParagraph(chapterIndex: number, paragraphIndex: number): void {

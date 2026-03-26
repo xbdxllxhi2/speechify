@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { ParsedDocument, Voice, VoiceOption, SentenceTiming } from '../models/document.model';
+import { ParsedDocument, Voice, VoiceOption, SentenceTiming, TOCEntry } from '../models/document.model';
 
 export interface TTSResponse {
   audio_base64: string;
@@ -53,14 +53,20 @@ export class ApiService {
         map((response) => {
           console.log('API Response:', response);
           console.log('Cover image present:', !!response.cover_image);
-          console.log('Cover image length:', response.cover_image?.length);
+          console.log('Classification:', response.classification);
 
           return {
             id: response.id,
             title: response.title,
             author: response.author,
             type: response.type,
+            classification: response.classification,
             chapters: response.chapters,
+            toc: response.toc?.map((entry: any) => ({
+              title: entry.title,
+              href: entry.href || '',
+              level: entry.level || 1,
+            })) as TOCEntry[],
             totalCharacters: response.total_characters,
             totalSentences: response.total_sentences,
             createdAt: new Date(response.created_at),

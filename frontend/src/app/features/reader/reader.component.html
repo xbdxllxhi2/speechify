@@ -60,21 +60,44 @@
     <!-- Sidebar - Chapter List (Desktop) - Fixed height, independent scroll -->
     <aside class="w-72 glass-card border-r border-white/20 hidden lg:flex lg:flex-col" style="height: calc(100vh - 65px);">
       <div class="flex-1 overflow-y-auto p-5">
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 sticky top-0 bg-white/80 backdrop-blur py-2 -mt-2">Chapters</h3>
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 sticky top-0 bg-white/80 backdrop-blur py-2 -mt-2">
+          {{ hasToc() ? 'Table of Contents' : 'Chapters' }}
+        </h3>
         <nav class="space-y-1">
-          @for (chapter of document()?.chapters; track chapter.id; let i = $index) {
-            <button
-              class="w-full text-left px-4 py-3 rounded-xl text-sm transition-all"
-              [class.bg-emerald-100]="currentChapterIndex() === i"
-              [class.text-emerald-900]="currentChapterIndex() === i"
-              [class.font-semibold]="currentChapterIndex() === i"
-              [class.text-gray-700]="currentChapterIndex() !== i"
-              [class.hover:bg-gray-100]="currentChapterIndex() !== i"
-              (click)="selectChapter(i)"
-            >
-              <span class="truncate block">{{ chapter.title }}</span>
-              <span class="text-xs text-gray-400 mt-0.5 block">{{ chapter.paragraphs.length }} paragraphs</span>
-            </button>
+          @if (hasToc()) {
+            <!-- TOC Navigation (for EPUBs with sommaire) -->
+            @for (entry of tocEntries(); track $index; let i = $index) {
+              <button
+                class="w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all"
+                [style.padding-left.rem]="1 + (entry.level - 1) * 0.75"
+                [class.bg-emerald-100]="currentChapterIndex() === i"
+                [class.text-emerald-900]="currentChapterIndex() === i"
+                [class.font-semibold]="currentChapterIndex() === i || entry.level === 1"
+                [class.text-gray-700]="currentChapterIndex() !== i"
+                [class.text-gray-500]="entry.level > 1 && currentChapterIndex() !== i"
+                [class.text-xs]="entry.level > 2"
+                [class.hover:bg-gray-100]="currentChapterIndex() !== i"
+                (click)="selectTocEntry(entry, i)"
+              >
+                <span class="truncate block">{{ entry.title }}</span>
+              </button>
+            }
+          } @else {
+            <!-- Chapter Navigation (fallback) -->
+            @for (chapter of document()?.chapters; track chapter.id; let i = $index) {
+              <button
+                class="w-full text-left px-4 py-3 rounded-xl text-sm transition-all"
+                [class.bg-emerald-100]="currentChapterIndex() === i"
+                [class.text-emerald-900]="currentChapterIndex() === i"
+                [class.font-semibold]="currentChapterIndex() === i"
+                [class.text-gray-700]="currentChapterIndex() !== i"
+                [class.hover:bg-gray-100]="currentChapterIndex() !== i"
+                (click)="selectChapter(i)"
+              >
+                <span class="truncate block">{{ chapter.title }}</span>
+                <span class="text-xs text-gray-400 mt-0.5 block">{{ chapter.paragraphs.length }} paragraphs</span>
+              </button>
+            }
           }
         </nav>
       </div>

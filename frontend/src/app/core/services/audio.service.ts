@@ -491,4 +491,51 @@ export class AudioService {
       });
     }
   }
+
+  /**
+   * Fully reset the audio service for a new document.
+   * Clears all state, prefetched segments, and stops playback.
+   */
+  reset(): void {
+    // Stop current playback and clean up audio element
+    if (this.audio) {
+      this.audio.pause();
+      URL.revokeObjectURL(this.audio.src);
+      this.audio = null;
+    }
+
+    // Clear all state
+    this.timings = [];
+    this.documentId = null;
+    this.chapterIndex = 0;
+    this.paragraphIndex = 0;
+
+    // Clear all prefetched segments
+    this.prefetchedSegments.clear();
+    this.prefetchInProgress.clear();
+
+    // Reset state signal
+    this._state.set({
+      isPlaying: false,
+      isLoading: false,
+      currentTime: 0,
+      duration: 0,
+      currentSentenceId: null,
+      error: null,
+    });
+  }
+
+  /**
+   * Clear prefetched segments for a specific document or all if no documentId provided
+   */
+  clearPrefetchedSegments(documentId?: string): void {
+    if (documentId && this.documentId !== documentId) {
+      // Only clear if we're switching to a different document
+      this.prefetchedSegments.clear();
+      this.prefetchInProgress.clear();
+    } else if (!documentId) {
+      this.prefetchedSegments.clear();
+      this.prefetchInProgress.clear();
+    }
+  }
 }
