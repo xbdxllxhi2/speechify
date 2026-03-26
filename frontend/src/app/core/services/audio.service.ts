@@ -88,8 +88,19 @@ export class AudioService {
   }
 
   async setVoice(voice: Voice): Promise<void> {
+    if (this._voice() === voice) return;
+
     this._voice.set(voice);
     await this.storage.setSetting('voice', voice);
+
+    // Clear prefetched segments since they used the old voice
+    this.prefetchedSegments.clear();
+    this.prefetchInProgress.clear();
+
+    // If we have a current document, clear its audio cache too
+    if (this.documentId) {
+      await this.storage.clearAudioCache(this.documentId);
+    }
   }
 
   async setSpeed(speed: number): Promise<void> {

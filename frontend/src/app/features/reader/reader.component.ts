@@ -6,9 +6,9 @@ import { Subscription } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 import { SliderModule } from 'primeng/slider';
-import { Select } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { Tooltip } from 'primeng/tooltip';
+import { Drawer } from 'primeng/drawer';
 import { MessageService } from 'primeng/api';
 
 import { StorageService } from '../../core/services/storage.service';
@@ -31,9 +31,9 @@ import {
     FormsModule,
     ButtonModule,
     SliderModule,
-    Select,
     ToastModule,
     Tooltip,
+    Drawer,
   ],
   providers: [MessageService],
   templateUrl: './reader.component.html',
@@ -61,6 +61,9 @@ export class ReaderComponent implements OnInit, OnDestroy {
   playbackSpeed = signal(1.0);
   continuousMode = signal(true);
   autoScrollEnabled = signal(true);
+  tocDrawerVisible = signal(false);
+  controlsMinimized = signal(false);
+  voicePanelVisible = signal(false);
 
   // Audio state from service
   isPlaying = this.audioService.isPlaying;
@@ -382,6 +385,7 @@ export class ReaderComponent implements OnInit, OnDestroy {
     this.currentChapterIndex.set(index);
     this.currentParagraphIndex.set(0);
     this.audioService.stop();
+    this.tocDrawerVisible.set(false); // Close drawer after selection
     // Scroll to chapter after DOM update
     setTimeout(() => this.scrollToCurrentParagraph(), 50);
   }
@@ -404,6 +408,10 @@ export class ReaderComponent implements OnInit, OnDestroy {
     }
 
     this.selectChapter(chapterIndex);
+  }
+
+  toggleTocDrawer(): void {
+    this.tocDrawerVisible.update(v => !v);
   }
 
   selectParagraph(chapterIndex: number, paragraphIndex: number): void {
@@ -456,6 +464,40 @@ export class ReaderComponent implements OnInit, OnDestroy {
    */
   toggleAutoScroll(): void {
     this.autoScrollEnabled.update(v => !v);
+  }
+
+  /**
+   * Toggle minimized controls
+   */
+  toggleControlsMinimized(): void {
+    this.controlsMinimized.update(v => !v);
+  }
+
+  /**
+   * Toggle voice panel visibility
+   */
+  toggleVoicePanel(): void {
+    this.voicePanelVisible.update(v => !v);
+  }
+
+  /**
+   * Sync view to current reading position
+   */
+  syncToCurrentPosition(): void {
+    const sentenceId = this.currentSentenceId();
+    if (sentenceId) {
+      this.scrollToSentence(sentenceId);
+    } else {
+      this.scrollToCurrentParagraph();
+    }
+  }
+
+  /**
+   * Get current voice name
+   */
+  getCurrentVoiceName(): string {
+    const voice = this.voices().find(v => v.id === this.selectedVoice());
+    return voice?.name || 'Nova';
   }
 
   /**

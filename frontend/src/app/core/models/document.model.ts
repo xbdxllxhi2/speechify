@@ -95,10 +95,12 @@ export interface VoiceOption {
   description: string;
 }
 
+export type ThemeMode = 'light' | 'dark' | 'system';
+
 export interface AppSettings {
   voice: Voice;
   speed: number;
-  theme: 'light' | 'dark';
+  theme: ThemeMode;
   autoPlay: boolean;
   highlightMode: 'sentence' | 'word';
 }
@@ -106,7 +108,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   voice: 'nova',
   speed: 1.0,
-  theme: 'light',
+  theme: 'system',
   autoPlay: true,
   highlightMode: 'sentence',
 };
