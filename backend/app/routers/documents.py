@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from uuid import uuid4
 from datetime import datetime
 
-from app.models.schemas import ParsedDocument, DocumentType
+from app.models.schemas import ParsedDocument, DocumentType, DocumentClassification, TOCEntry
 from app.services.pdf_parser import parse_pdf
 from app.services.epub_parser import parse_epub
 from app.config import get_settings
@@ -36,13 +36,27 @@ async def parse_document(file: UploadFile = File(...)):
         )
 
     doc_id = str(uuid4())
+    classification = DocumentClassification.DOCUMENT
+    toc_entries: list[TOCEntry] = []
 
     if extension == "pdf":
-        chapters, cover_image = parse_pdf(content, doc_id)
+        chapters, cover_image, doc_classification = parse_pdf(content, doc_id)
         doc_type = DocumentType.PDF
+        classification = DocumentClassification(doc_classification)
+        # Generate TOC from chapters for PDFs
+        toc_entries = [
+            TOCEntry(title=ch.title, href=f"#chapter-{i}", level=1)
+            for i, ch in enumerate(chapters)
+        ]
     else:
-        chapters, cover_image = parse_epub(content, doc_id)
+        chapters, cover_image, epub_toc = parse_epub(content, doc_id)
         doc_type = DocumentType.EPUB
+        classification = DocumentClassification.BOOK
+        # Use extracted TOC from EPUB
+        toc_entries = [
+            TOCEntry(title=entry['title'], href=entry.get('href', ''), level=entry.get('level', 1))
+            for entry in epub_toc
+        ]
 
     total_chars = sum(len(p.text) for c in chapters for p in c.paragraphs)
     total_sentences = sum(len(p.sentences) for c in chapters for p in c.paragraphs)
@@ -53,7 +67,9 @@ async def parse_document(file: UploadFile = File(...)):
         id=doc_id,
         title=title,
         type=doc_type,
+        classification=classification,
         chapters=chapters,
+        toc=toc_entries,
         total_characters=total_chars,
         total_sentences=total_sentences,
         created_at=datetime.now(),

@@ -1,5 +1,7 @@
 export type DocumentType = 'pdf' | 'epub';
 
+export type DocumentClassification = 'book' | 'document';
+
 export type Voice = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
 
 export interface Sentence {
@@ -24,12 +26,20 @@ export interface Chapter {
   paragraphs: Paragraph[];
 }
 
+export interface TOCEntry {
+  title: string;
+  href: string;
+  level: number;
+}
+
 export interface ParsedDocument {
   id: string;
   title: string;
   author?: string;
   type: DocumentType;
+  classification?: DocumentClassification;
   chapters: Chapter[];
+  toc?: TOCEntry[];
   totalCharacters: number;
   totalSentences: number;
   createdAt: Date;
@@ -85,10 +95,12 @@ export interface VoiceOption {
   description: string;
 }
 
+export type ThemeMode = 'light' | 'dark' | 'system';
+
 export interface AppSettings {
   voice: Voice;
   speed: number;
-  theme: 'light' | 'dark';
+  theme: ThemeMode;
   autoPlay: boolean;
   highlightMode: 'sentence' | 'word';
 }

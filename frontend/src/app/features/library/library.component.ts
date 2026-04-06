@@ -1,5 +1,5 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -10,11 +10,11 @@ import { ProgressBarModule } from 'primeng/progressbar';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TooltipModule } from 'primeng/tooltip';
-import { CheckboxModule } from 'primeng/checkbox';
 import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { ApiService } from '../../core/services/api.service';
 import { StorageService } from '../../core/services/storage.service';
+import { AudioService } from '../../core/services/audio.service';
 import { StoredDocument, PlaybackProgress } from '../../core/models/document.model';
 
 @Component({
@@ -23,6 +23,7 @@ import { StoredDocument, PlaybackProgress } from '../../core/models/document.mod
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     ButtonModule,
     CardModule,
     FileUploadModule,
@@ -30,7 +31,6 @@ import { StoredDocument, PlaybackProgress } from '../../core/models/document.mod
     ToastModule,
     ConfirmDialogModule,
     TooltipModule,
-    CheckboxModule,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './library.component.html',
@@ -38,9 +38,13 @@ import { StoredDocument, PlaybackProgress } from '../../core/models/document.mod
 export class LibraryComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly storage = inject(StorageService);
+  private readonly audioService = inject(AudioService);
   private readonly router = inject(Router);
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
+
+  // Expose for template
+  hasActivePlayback = this.audioService.hasActivePlayback;
 
   documents = signal<StoredDocument[]>([]);
   isLoading = signal(false);
@@ -48,6 +52,54 @@ export class LibraryComponent implements OnInit {
   isUploading = signal(false);
   selectedDocuments = signal<Set<string>>(new Set());
   isSelectionMode = signal(false);
+
+  // Search and sort
+  searchQuery = signal('');
+  sortField = signal<'title' | 'createdAt' | 'type'>('createdAt');
+  sortOrder = signal<1 | -1>(-1); // 1 = asc, -1 = desc
+
+  // Computed: Filtered and sorted documents
+  filteredDocuments = computed(() => {
+    const query = this.searchQuery().toLowerCase().trim();
+    const field = this.sortField();
+    const order = this.sortOrder();
+
+    let docs = this.documents();
+
+    // Filter by search query
+    if (query) {
+      docs = docs.filter(doc =>
+        doc.title.toLowerCase().includes(query) ||
+        (doc.author?.toLowerCase().includes(query)) ||
+        doc.type.toLowerCase().includes(query)
+      );
+    }
+
+    // Sort
+    return [...docs].sort((a, b) => {
+      let comparison = 0;
+      if (field === 'title') {
+        comparison = a.title.localeCompare(b.title);
+      } else if (field === 'type') {
+        comparison = a.type.localeCompare(b.type);
+      } else if (field === 'createdAt') {
+        comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      return comparison * order;
+    });
+  });
+
+  // Computed: Recent documents (last 5 by play time, with progress > 0)
+  recentDocuments = computed(() => {
+    return this.documents()
+      .filter(doc => this.getReadingProgress(doc) > 0)
+      .sort((a, b) => {
+        const aTime = new Date(a.progress.lastPlayedAt).getTime();
+        const bTime = new Date(b.progress.lastPlayedAt).getTime();
+        return bTime - aTime; // Most recent first
+      })
+      .slice(0, 5);
+  });
 
   ngOnInit(): void {
     this.loadDocuments();
@@ -200,11 +252,22 @@ export class LibraryComponent implements OnInit {
   }
 
   selectAll(): void {
-    this.selectedDocuments.set(new Set(this.documents().map(d => d.id)));
+    this.selectedDocuments.set(new Set(this.filteredDocuments().map(d => d.id)));
   }
 
   deselectAll(): void {
     this.selectedDocuments.set(new Set());
+  }
+
+  toggleSort(field: 'title' | 'createdAt' | 'type'): void {
+    if (this.sortField() === field) {
+      // Toggle order if same field
+      this.sortOrder.update(o => o === 1 ? -1 : 1);
+    } else {
+      // Set new field with default order
+      this.sortField.set(field);
+      this.sortOrder.set(field === 'createdAt' ? -1 : 1);
+    }
   }
 
   confirmBulkDelete(event: Event): void {

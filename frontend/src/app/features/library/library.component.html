@@ -1,93 +1,95 @@
-<div class="min-h-screen bg-white flex flex-col">
+<div class="min-h-screen flex flex-col bg-slate-50 overflow-x-hidden">
   <p-toast position="top-center" />
   <p-confirmDialog />
 
-  <!-- Mobile Header -->
-  <header class="sticky top-0 z-40 bg-white border-b border-gray-100 safe-area-top">
-    <div class="px-4 py-4 md:px-6 md:py-5">
+  <!-- Header -->
+  <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 safe-area-top">
+    <div class="max-w-5xl mx-auto px-4 py-4 md:px-6">
       <div class="flex items-center justify-between">
         <!-- Logo -->
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center">
-            <i class="pi pi-headphones text-white text-sm md:text-base"></i>
-          </div>
-          <span class="text-xl md:text-2xl font-bold text-gray-900">Listenify</span>
+        <div class="flex items-center">
+          <span class="text-2xl font-semibold font-logo tracking-tight">Listenify</span>
         </div>
 
         <!-- Desktop Actions -->
-        <div class="hidden md:flex items-center gap-3">
-          @if (documents().length > 0) {
-            @if (!isSelectionMode()) {
+        <div class="hidden md:flex items-center gap-2">
+          @if (documents().length > 0 && isSelectionMode()) {
+            <span class="text-sm text-slate-500 mr-2">{{ selectedDocuments().size }} selected</span>
+            <button
+              class="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              (click)="selectAll()"
+            >
+              All
+            </button>
+            <button
+              class="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              (click)="deselectAll()"
+            >
+              None
+            </button>
+            @if (selectedDocuments().size > 0) {
               <button
-                class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors"
+                class="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                (click)="confirmBulkDelete($event)"
+              >
+                Delete
+              </button>
+            }
+            <button
+              class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              (click)="toggleSelectionMode()"
+            >
+              Cancel
+            </button>
+          } @else {
+            @if (documents().length > 0) {
+              <button
+                class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                 (click)="toggleSelectionMode()"
               >
                 Select
               </button>
-            } @else {
-              <span class="text-sm text-gray-500 mr-2">{{ selectedDocuments().size }} selected</span>
-              <button
-                class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900"
-                (click)="selectAll()"
-              >
-                All
-              </button>
-              <button
-                class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900"
-                (click)="deselectAll()"
-              >
-                None
-              </button>
-              @if (selectedDocuments().size > 0) {
-                <button
-                  class="px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors"
-                  (click)="confirmBulkDelete($event)"
-                >
-                  Delete
-                </button>
-              }
-              <button
-                class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
-                (click)="toggleSelectionMode()"
-              >
-                Cancel
-              </button>
             }
+            <p-fileUpload
+              mode="basic"
+              name="file"
+              accept=".pdf,.epub"
+              [maxFileSize]="52428800"
+              chooseLabel="Upload"
+              chooseIcon="pi pi-plus"
+              [auto]="true"
+              [customUpload]="true"
+              (uploadHandler)="onFileUpload($event)"
+              styleClass="!rounded-xl"
+            />
+            <a
+              routerLink="/settings"
+              class="w-10 h-10 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
+            >
+              <i class="pi pi-cog text-lg"></i>
+            </a>
           }
-          <p-fileUpload
-            mode="basic"
-            name="file"
-            accept=".pdf,.epub"
-            [maxFileSize]="52428800"
-            chooseLabel="Upload"
-            chooseIcon="pi pi-plus"
-            [auto]="true"
-            [customUpload]="true"
-            (uploadHandler)="onFileUpload($event)"
-            styleClass="!bg-gradient-to-r !from-emerald-600 !to-emerald-700 !border-0 !rounded-xl hover:!shadow-lg hover:!shadow-emerald-500/25 !transition-all"
-          />
         </div>
 
         <!-- Mobile Actions -->
-        <div class="flex md:hidden items-center gap-2">
+        <div class="flex md:hidden items-center gap-1">
           @if (isSelectionMode()) {
             <button
-              class="p-2 text-emerald-600"
-              [class.opacity-50]="selectedDocuments().size === 0"
+              class="w-10 h-10 rounded-lg flex items-center justify-center text-red-600 hover:bg-red-50 transition-colors"
               [disabled]="selectedDocuments().size === 0"
               (click)="confirmBulkDelete($event)"
             >
               <i class="pi pi-trash text-lg"></i>
             </button>
             <button
-              class="p-2 text-gray-500"
+              class="w-10 h-10 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
               (click)="toggleSelectionMode()"
             >
               <i class="pi pi-times text-lg"></i>
             </button>
           } @else if (documents().length > 0) {
             <button
-              class="p-2 text-gray-500"
+              class="w-10 h-10 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
               (click)="toggleSelectionMode()"
             >
               <i class="pi pi-check-square text-lg"></i>
@@ -98,11 +100,11 @@
 
       <!-- Mobile Selection Bar -->
       @if (isSelectionMode()) {
-        <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 md:hidden">
-          <span class="text-sm text-gray-500">{{ selectedDocuments().size }} selected</span>
+        <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-200 md:hidden">
+          <span class="text-sm text-slate-500">{{ selectedDocuments().size }} selected</span>
           <div class="flex items-center gap-4">
             <button class="text-sm text-emerald-600 font-medium" (click)="selectAll()">Select All</button>
-            <button class="text-sm text-gray-500" (click)="deselectAll()">Clear</button>
+            <button class="text-sm text-slate-500" (click)="deselectAll()">Clear</button>
           </div>
         </div>
       }
@@ -111,18 +113,20 @@
 
   <!-- Upload Progress -->
   @if (isUploading()) {
-    <div class="px-4 py-3 md:px-6 bg-gray-50">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center flex-shrink-0">
-          <i class="pi pi-spin pi-spinner text-white text-sm"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-gray-900 truncate">Processing...</p>
-          <div class="h-1 bg-gray-200 rounded-full mt-1.5 overflow-hidden">
-            <div
-              class="h-full bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-full transition-all duration-300"
-              [style.width.%]="uploadProgress()"
-            ></div>
+    <div class="max-w-5xl mx-auto w-full px-4 md:px-6">
+      <div class="mt-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-200">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+            <i class="pi pi-spin pi-spinner text-emerald-600"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium">Processing your document...</p>
+            <div class="h-2 bg-slate-200 rounded-full mt-2 overflow-hidden">
+              <div
+                class="h-full bg-emerald-500 rounded-full transition-all"
+                [style.width.%]="uploadProgress()"
+              ></div>
+            </div>
           </div>
         </div>
       </div>
@@ -130,26 +134,30 @@
   }
 
   <!-- Main Content -->
-  <main class="flex-1 overflow-auto pb-24 md:pb-8">
+  <main
+    class="flex-1 md:pb-8 overflow-x-hidden transition-all"
+    [class.pb-24]="!hasActivePlayback()"
+    [class.pb-44]="hasActivePlayback()"
+  >
     @if (isLoading()) {
       <!-- Loading State -->
-      <div class="flex items-center justify-center h-64">
+      <div class="flex items-center justify-center h-[60vh]">
         <div class="text-center">
-          <div class="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center mb-4">
-            <i class="pi pi-spin pi-spinner text-white text-xl"></i>
+          <div class="w-16 h-16 mx-auto rounded-2xl bg-emerald-100 flex items-center justify-center mb-4">
+            <i class="pi pi-spin pi-spinner text-emerald-600 text-2xl"></i>
           </div>
-          <p class="text-gray-500 text-sm">Loading your library...</p>
+          <p class="text-slate-500">Loading your library...</p>
         </div>
       </div>
     } @else if (documents().length === 0) {
       <!-- Empty State -->
-      <div class="flex flex-col items-center justify-center px-6 py-16 md:py-24">
-        <div class="w-24 h-24 md:w-32 md:h-32 rounded-3xl bg-gradient-to-br from-emerald-100 to-green-100 flex items-center justify-center mb-6">
-          <i class="pi pi-book text-4xl md:text-5xl text-emerald-600"></i>
+      <div class="flex flex-col items-center justify-center px-6 py-20 md:py-32">
+        <div class="w-24 h-24 rounded-3xl bg-slate-100 flex items-center justify-center mb-6">
+          <i class="pi pi-book text-4xl text-slate-400"></i>
         </div>
-        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-2">Your Library</h2>
-        <p class="text-gray-500 text-center max-w-sm mb-8">
-          Add your first document to start listening
+        <h2 class="text-2xl font-bold text-center mb-2">Your Library is Empty</h2>
+        <p class="text-slate-500 text-center max-w-sm mb-8">
+          Upload your first PDF or EPUB to start listening
         </p>
         <p-fileUpload
           mode="basic"
@@ -161,126 +169,230 @@
           [auto]="true"
           [customUpload]="true"
           (uploadHandler)="onFileUpload($event)"
-          styleClass="!bg-gradient-to-r !from-emerald-600 !to-emerald-700 !border-0 !rounded-2xl !px-8 !py-3 hover:!shadow-xl hover:!shadow-emerald-500/30 !transition-all"
+          styleClass="!rounded-2xl !px-8 !py-3"
         />
       </div>
     } @else {
       <!-- Library Content -->
-      <div class="px-4 md:px-6 py-4 md:py-6">
-        <!-- Section Title -->
-        <div class="flex items-center justify-between mb-4 md:mb-6">
-          <div>
-            <h2 class="text-lg md:text-xl font-bold text-gray-900">Library</h2>
-            <p class="text-xs md:text-sm text-gray-500">{{ documents().length }} item{{ documents().length !== 1 ? 's' : '' }}</p>
-          </div>
-        </div>
+      <div class="max-w-5xl mx-auto px-4 md:px-6 py-6">
 
-        <!-- Document Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5">
-          @for (doc of documents(); track doc.id) {
-            <div
-              class="group relative"
-              (click)="isSelectionMode() ? toggleDocumentSelection(doc.id) : openDocument(doc)"
-            >
-              <!-- Book Card -->
-              <div
-                class="relative bg-white rounded-xl md:rounded-2xl overflow-hidden transition-all duration-200 active:scale-95 md:active:scale-100 md:hover:shadow-md border border-gray-100"
-                [class.ring-2]="isSelectionMode() && isDocumentSelected(doc.id)"
-                [class.ring-emerald-500]="isSelectionMode() && isDocumentSelected(doc.id)"
-                [class.shadow-sm]="isSelectionMode() && isDocumentSelected(doc.id)"
-              >
-                <!-- Selection Indicator -->
-                @if (isSelectionMode()) {
-                  <div class="absolute top-2 right-2 z-20">
-                    <div
-                      class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
-                      [class.border-emerald-600]="isDocumentSelected(doc.id)"
-                      [class.bg-emerald-600]="isDocumentSelected(doc.id)"
-                      [class.border-gray-300]="!isDocumentSelected(doc.id)"
-                      [class.bg-white]="!isDocumentSelected(doc.id)"
-                    >
-                      @if (isDocumentSelected(doc.id)) {
-                        <i class="pi pi-check text-white text-xs"></i>
-                      }
+        <!-- Continue Reading -->
+        @if (recentDocuments().length > 0 && !isSelectionMode()) {
+          <section class="mb-8">
+            <h2 class="text-lg font-semibold mb-4">Continue Reading</h2>
+            <div class="overflow-x-auto -mx-4 px-4 scrollbar-hide">
+              <div class="flex gap-4" style="width: max-content;">
+                @for (doc of recentDocuments(); track doc.id) {
+                  <div
+                    class="group cursor-pointer flex-shrink-0 w-72"
+                    (click)="openDocument(doc)"
+                  >
+                    <div class="bg-white rounded-2xl p-4 flex gap-4 border border-slate-200 hover:border-emerald-300 hover:shadow-lg transition-all">
+                      <!-- Cover -->
+                      <div class="w-16 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-slate-100">
+                        @if (doc.coverImage) {
+                          <img
+                            [src]="'data:image/png;base64,' + doc.coverImage"
+                            alt="{{ doc.title }}"
+                            class="w-full h-full object-cover"
+                          />
+                        } @else {
+                          <div class="w-full h-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center">
+                            <i class="pi text-lg text-white" [class.pi-file-pdf]="doc.type === 'pdf'" [class.pi-book]="doc.type === 'epub'"></i>
+                          </div>
+                        }
+                      </div>
+                      <!-- Info -->
+                      <div class="flex-1 min-w-0 flex flex-col justify-between">
+                        <div>
+                          <h3 class="font-semibold text-sm line-clamp-2 font-serif-reading">{{ doc.title }}</h3>
+                          @if (doc.author) {
+                            <p class="text-xs text-slate-500 mt-0.5 truncate">{{ doc.author }}</p>
+                          }
+                        </div>
+                        <div>
+                          <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-emerald-500 rounded-full" [style.width.%]="getReadingProgress(doc)"></div>
+                          </div>
+                          <p class="text-xs text-emerald-600 font-medium mt-1">{{ getReadingProgress(doc) }}% complete</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 }
+              </div>
+            </div>
+          </section>
+        }
 
-                <!-- Cover -->
-                <div class="aspect-[3/4] relative overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
-                  @if (doc.coverImage) {
-                    <img
-                      [src]="'data:image/png;base64,' + doc.coverImage"
-                      alt="{{ doc.title }}"
-                      class="w-full h-full object-cover"
-                    />
-                  } @else {
-                    <div class="w-full h-full bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700 flex flex-col items-center justify-center p-4">
-                      <i class="pi text-3xl md:text-4xl text-white/90 mb-2" [class.pi-file-pdf]="doc.type === 'pdf'" [class.pi-book]="doc.type === 'epub'"></i>
-                      <span class="text-white/80 text-[10px] md:text-xs font-medium uppercase tracking-wider">{{ doc.type }}</span>
-                    </div>
-                  }
-
-                  <!-- Progress Overlay -->
-                  @if (getReadingProgress(doc) > 0) {
-                    <div class="absolute bottom-0 left-0 right-0">
-                      <div class="h-1 bg-black/20">
-                        <div
-                          class="h-full bg-emerald-500"
-                          [style.width.%]="getReadingProgress(doc)"
-                        ></div>
-                      </div>
-                    </div>
-                  }
-
-                  <!-- Play Button Overlay (Desktop) -->
-                  @if (!isSelectionMode()) {
-                    <div class="hidden md:flex absolute inset-0 items-center justify-center bg-black/0 group-hover:bg-black/30 transition-all duration-200">
-                      <div class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-200 shadow-lg">
-                        <i class="pi pi-play text-emerald-600 text-lg ml-0.5"></i>
-                      </div>
-                    </div>
-                  }
-                </div>
-
-                <!-- Info -->
-                <div class="p-2.5 md:p-3">
-                  <h3 class="font-semibold text-gray-900 text-xs md:text-sm leading-tight line-clamp-2 min-h-[2rem] md:min-h-[2.5rem]">
-                    {{ doc.title }}
-                  </h3>
-                  @if (doc.author) {
-                    <p class="text-[10px] md:text-xs text-gray-500 truncate mt-0.5">{{ doc.author }}</p>
-                  }
-
-                  <!-- Actions Row -->
-                  <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-                    @if (getReadingProgress(doc) > 0) {
-                      <span class="text-[10px] md:text-xs text-emerald-600 font-medium">{{ getReadingProgress(doc) }}%</span>
-                    } @else {
-                      <span class="text-[10px] md:text-xs text-gray-400 uppercase tracking-wide">{{ doc.type }}</span>
+        <!-- All Documents -->
+        <section>
+          <!-- Section Header with Search & Sort -->
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+            <h2 class="text-lg font-semibold">
+              All Documents
+              <span class="text-sm font-normal text-slate-500 ml-2">{{ filteredDocuments().length }} items</span>
+            </h2>
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+              <!-- Search -->
+              <div class="relative flex-1 sm:flex-initial">
+                <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  [ngModel]="searchQuery()"
+                  (ngModelChange)="searchQuery.set($event)"
+                  class="w-full sm:w-48 pl-10 pr-4 py-2 rounded-xl bg-white border border-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                />
+              </div>
+              <!-- Sort -->
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-slate-500 hidden sm:inline">Sort:</span>
+                <div class="flex rounded-xl bg-slate-100 p-1">
+                  <button
+                    class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+                    [class.bg-white]="sortField() === 'title'"
+                    [class.shadow-sm]="sortField() === 'title'"
+                    [class.text-slate-500]="sortField() !== 'title'"
+                    (click)="toggleSort('title')"
+                  >
+                    Name
+                    @if (sortField() === 'title') {
+                      <i class="pi ml-1" [class.pi-sort-alpha-down]="sortOrder() === 1" [class.pi-sort-alpha-up]="sortOrder() === -1"></i>
                     }
-
-                    @if (!isSelectionMode()) {
-                      <button
-                        class="w-6 h-6 md:w-7 md:h-7 -mr-1 rounded-lg flex items-center justify-center text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
-                        (click)="confirmDelete(doc, $event)"
-                      >
-                        <i class="pi pi-trash text-[10px] md:text-xs"></i>
-                      </button>
+                  </button>
+                  <button
+                    class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+                    [class.bg-white]="sortField() === 'createdAt'"
+                    [class.shadow-sm]="sortField() === 'createdAt'"
+                    [class.text-slate-500]="sortField() !== 'createdAt'"
+                    (click)="toggleSort('createdAt')"
+                  >
+                    Date
+                    @if (sortField() === 'createdAt') {
+                      <i class="pi ml-1" [class.pi-sort-amount-down]="sortOrder() === -1" [class.pi-sort-amount-up]="sortOrder() === 1"></i>
                     }
-                  </div>
+                  </button>
+                  <button
+                    class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+                    [class.bg-white]="sortField() === 'type'"
+                    [class.shadow-sm]="sortField() === 'type'"
+                    [class.text-slate-500]="sortField() !== 'type'"
+                    (click)="toggleSort('type')"
+                  >
+                    Type
+                    @if (sortField() === 'type') {
+                      <i class="pi ml-1" [class.pi-sort-alpha-down]="sortOrder() === 1" [class.pi-sort-alpha-up]="sortOrder() === -1"></i>
+                    }
+                  </button>
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- Document Grid -->
+          @if (filteredDocuments().length > 0) {
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              @for (doc of filteredDocuments(); track doc.id) {
+                <div
+                  class="group bg-white rounded-2xl border border-slate-200 overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:border-emerald-300"
+                  [class.ring-2]="isSelectionMode() && isDocumentSelected(doc.id)"
+                  [class.ring-emerald-500]="isSelectionMode() && isDocumentSelected(doc.id)"
+                  (click)="isSelectionMode() ? toggleDocumentSelection(doc.id) : openDocument(doc)"
+                >
+                  <div class="p-4 flex gap-4">
+                    <!-- Cover -->
+                    <div class="relative w-16 h-22 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100">
+                      @if (doc.coverImage) {
+                        <img
+                          [src]="'data:image/png;base64,' + doc.coverImage"
+                          alt="{{ doc.title }}"
+                          class="w-full h-full object-cover"
+                        />
+                      } @else {
+                        <div class="w-full h-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center">
+                          <i class="pi text-xl text-white" [class.pi-file-pdf]="doc.type === 'pdf'" [class.pi-book]="doc.type === 'epub'"></i>
+                        </div>
+                      }
+                      <!-- Selection indicator -->
+                      @if (isSelectionMode()) {
+                        <div
+                          class="absolute top-1 left-1 w-6 h-6 rounded-full flex items-center justify-center transition-colors"
+                          [class.bg-emerald-500]="isDocumentSelected(doc.id)"
+                          [class.bg-white/80]="!isDocumentSelected(doc.id)"
+                        >
+                          @if (isDocumentSelected(doc.id)) {
+                            <i class="pi pi-check text-white text-xs"></i>
+                          }
+                        </div>
+                      }
+                      <!-- Type badge -->
+                      <span
+                        class="absolute bottom-1 right-1 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded text-white"
+                        [class.bg-blue-500]="doc.type === 'pdf'"
+                        [class.bg-purple-500]="doc.type === 'epub'"
+                      >
+                        {{ doc.type }}
+                      </span>
+                    </div>
+
+                    <!-- Info -->
+                    <div class="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                      <div>
+                        <h3 class="font-semibold text-sm line-clamp-2 leading-tight font-serif-reading">{{ doc.title }}</h3>
+                        @if (doc.author) {
+                          <p class="text-xs text-slate-500 mt-1 truncate">{{ doc.author }}</p>
+                        }
+                      </div>
+                      <div class="mt-2">
+                        <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                          <div class="h-full bg-emerald-500 rounded-full transition-all" [style.width.%]="getReadingProgress(doc)"></div>
+                        </div>
+                        <div class="flex items-center justify-between mt-1.5">
+                          <span class="text-xs text-emerald-600 font-medium">{{ getReadingProgress(doc) }}%</span>
+                          @if (!isSelectionMode()) {
+                            <button
+                              class="w-7 h-7 -mr-1 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                              (click)="confirmDelete(doc, $event)"
+                              pTooltip="Delete"
+                            >
+                              <i class="pi pi-trash text-xs"></i>
+                            </button>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <!-- Empty Search Results -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-12">
+              <div class="flex flex-col items-center">
+                <i class="pi pi-search text-4xl text-slate-300 mb-4"></i>
+                <p class="text-slate-500 text-center">No documents found matching "{{ searchQuery() }}"</p>
+                <button
+                  class="mt-4 text-sm text-emerald-600 hover:underline"
+                  (click)="searchQuery.set('')"
+                >
+                  Clear search
+                </button>
+              </div>
+            </div>
           }
-        </div>
+        </section>
       </div>
     }
   </main>
 
-  <!-- Mobile Floating Action Button -->
+  <!-- Mobile FAB -->
   @if (!isSelectionMode() && documents().length > 0) {
-    <div class="fixed bottom-20 right-4 md:hidden z-50">
+    <div
+      class="fixed right-4 md:hidden z-50 transition-all"
+      [class.bottom-24]="!hasActivePlayback()"
+      [class.bottom-40]="hasActivePlayback()"
+    >
       <p-fileUpload
         mode="basic"
         name="file"
@@ -291,26 +403,24 @@
         [auto]="true"
         [customUpload]="true"
         (uploadHandler)="onFileUpload($event)"
-        styleClass="!w-14 h-14 [&_.p-button-label]:!hidden [&_.p-button-icon]:!text-xl [&_.p-button-icon]:!mr-0"
+        styleClass="!w-14 !h-14 !rounded-full !shadow-lg [&_.p-button-label]:!hidden [&_.p-button-icon]:!text-xl [&_.p-button-icon]:!mr-0"
       />
     </div>
   }
 
-  <!-- Mobile Bottom Navigation -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 safe-area-bottom md:hidden z-40">
-    <div class="flex items-center justify-around py-2">
-      <button class="flex flex-col items-center gap-1 px-6 py-2 text-emerald-600">
+  <!-- Mobile Bottom Nav -->
+  <nav
+    class="fixed left-0 right-0 bottom-0 bg-white border-t border-slate-200 safe-area-bottom md:hidden z-40"
+  >
+    <div class="flex items-center justify-around py-3">
+      <button class="flex flex-col items-center gap-1 px-6 py-1 text-emerald-600">
         <i class="pi pi-home text-xl"></i>
-        <span class="text-[10px] font-medium">Library</span>
+        <span class="text-[10px] font-semibold">Library</span>
       </button>
-      <button class="flex flex-col items-center gap-1 px-6 py-2 text-gray-400">
-        <i class="pi pi-search text-xl"></i>
-        <span class="text-[10px] font-medium">Discover</span>
-      </button>
-      <button class="flex flex-col items-center gap-1 px-6 py-2 text-gray-400">
+      <a routerLink="/settings" class="flex flex-col items-center gap-1 px-6 py-1 text-slate-400">
         <i class="pi pi-cog text-xl"></i>
         <span class="text-[10px] font-medium">Settings</span>
-      </button>
+      </a>
     </div>
   </nav>
 </div>

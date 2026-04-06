@@ -1,6 +1,6 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { Subject } from 'rxjs';
-import { SentenceTiming, Voice, PlaybackProgress } from '../models/document.model';
+import { SentenceTiming, Voice, PlaybackProgress, Chapter } from '../models/document.model';
 import { ApiService } from './api.service';
 import { StorageService } from './storage.service';
 
@@ -13,10 +13,25 @@ export interface PlaybackState {
   error: string | null;
 }
 
+export interface CurrentDocument {
+  id: string;
+  title: string;
+  author?: string;
+  coverImage?: string;
+  chapterTitle?: string;
+}
+
 export interface PlaybackEndedEvent {
   documentId: string;
   chapterIndex: number;
   paragraphIndex: number;
+}
+
+export interface PlaylistEntry {
+  text: string;
+  chapterIndex: number;
+  paragraphIndex: number;
+  chapterTitle: string;
 }
 
 @Injectable({
@@ -32,6 +47,10 @@ export class AudioService {
   private chapterIndex = 0;
   private paragraphIndex = 0;
   private continuousPlayback = true;
+
+  // Playlist: flat list of all paragraphs for auto-advance
+  private playlist: PlaylistEntry[] = [];
+  private playlistIndex = -1;
 
   // Prefetch state
   private prefetchInProgress = new Set<string>(); // Track multiple prefetches by key
@@ -54,6 +73,10 @@ export class AudioService {
   private readonly _requestNextParagraph = new Subject<void>();
   readonly requestNextParagraph$ = this._requestNextParagraph.asObservable();
 
+  // Emitted when auto-advance changes the playback position
+  private readonly _positionChanged = new Subject<{ chapterIndex: number; paragraphIndex: number }>();
+  readonly positionChanged$ = this._positionChanged.asObservable();
+
   // Signals for reactive state
   private readonly _state = signal<PlaybackState>({
     isPlaying: false,
@@ -71,6 +94,11 @@ export class AudioService {
   readonly duration = computed(() => this._state().duration);
   readonly currentSentenceId = computed(() => this._state().currentSentenceId);
 
+  // Current document info for mini player
+  private readonly _currentDocument = signal<CurrentDocument | null>(null);
+  readonly currentDocument = this._currentDocument.asReadonly();
+  readonly hasActivePlayback = computed(() => this._currentDocument() !== null);
+
   // Settings
   private _voice = signal<Voice>('nova');
   private _speed = signal<number>(1.0);
@@ -79,6 +107,7 @@ export class AudioService {
 
   constructor() {
     this.loadSettings();
+    this.setupMediaSession();
   }
 
   private async loadSettings(): Promise<void> {
@@ -87,9 +116,102 @@ export class AudioService {
     this._speed.set(settings.speed);
   }
 
+  private setupMediaSession(): void {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.setActionHandler('play', () => this.play());
+      navigator.mediaSession.setActionHandler('pause', () => this.pause());
+      navigator.mediaSession.setActionHandler('seekbackward', () => this.skip(-10));
+      navigator.mediaSession.setActionHandler('seekforward', () => this.skip(10));
+      navigator.mediaSession.setActionHandler('previoustrack', () => this.requestPreviousParagraph());
+      navigator.mediaSession.setActionHandler('nexttrack', () => this.requestNextParagraphAction());
+    }
+  }
+
+  private updateMediaSession(): void {
+    if ('mediaSession' in navigator && this._currentDocument()) {
+      const doc = this._currentDocument()!;
+      const artwork: MediaImage[] = [];
+
+      if (doc.coverImage) {
+        artwork.push({
+          src: `data:image/png;base64,${doc.coverImage}`,
+          sizes: '512x512',
+          type: 'image/png',
+        });
+      }
+
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: doc.chapterTitle || doc.title,
+        artist: doc.author || 'Listenify',
+        album: doc.title,
+        artwork,
+      });
+    }
+  }
+
+  private updateMediaSessionState(): void {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = this._state().isPlaying ? 'playing' : 'paused';
+    }
+  }
+
+  // Event for requesting previous paragraph from reader
+  private readonly _requestPreviousParagraph = new Subject<void>();
+  readonly requestPreviousParagraph$ = this._requestPreviousParagraph.asObservable();
+
+  private requestPreviousParagraph(): void {
+    this._requestPreviousParagraph.next();
+  }
+
+  private requestNextParagraphAction(): void {
+    this._requestNextParagraph.next();
+  }
+
+  /**
+   * Set the current document for mini player display
+   */
+  setCurrentDocument(doc: CurrentDocument | null): void {
+    this._currentDocument.set(doc);
+    if (doc) {
+      this.updateMediaSession();
+    }
+  }
+
+  /**
+   * Update chapter title for the current document
+   */
+  updateChapterTitle(title: string): void {
+    const current = this._currentDocument();
+    if (current) {
+      this._currentDocument.set({ ...current, chapterTitle: title });
+      this.updateMediaSession();
+    }
+  }
+
+  /**
+   * Get current playback position info for mini player
+   */
+  getCurrentPosition(): { chapterIndex: number; paragraphIndex: number } {
+    return {
+      chapterIndex: this.chapterIndex,
+      paragraphIndex: this.paragraphIndex,
+    };
+  }
+
   async setVoice(voice: Voice): Promise<void> {
+    if (this._voice() === voice) return;
+
     this._voice.set(voice);
     await this.storage.setSetting('voice', voice);
+
+    // Clear prefetched segments since they used the old voice
+    this.prefetchedSegments.clear();
+    this.prefetchInProgress.clear();
+
+    // If we have a current document, clear its audio cache too
+    if (this.documentId) {
+      await this.storage.clearAudioCache(this.documentId);
+    }
   }
 
   async setSpeed(speed: number): Promise<void> {
@@ -102,6 +224,35 @@ export class AudioService {
 
   setContinuousPlayback(enabled: boolean): void {
     this.continuousPlayback = enabled;
+  }
+
+  /**
+   * Set the full document playlist so the service can auto-advance through all paragraphs.
+   */
+  setPlaylist(chapters: Chapter[], documentId: string): void {
+    this.playlist = [];
+    for (let ci = 0; ci < chapters.length; ci++) {
+      const chapter = chapters[ci];
+      for (let pi = 0; pi < chapter.paragraphs.length; pi++) {
+        this.playlist.push({
+          text: chapter.paragraphs[pi].text,
+          chapterIndex: ci,
+          paragraphIndex: pi,
+          chapterTitle: chapter.title,
+        });
+      }
+    }
+    this.documentId = documentId;
+    this.syncPlaylistIndex();
+  }
+
+  /**
+   * Sync playlist index to current chapter/paragraph position
+   */
+  private syncPlaylistIndex(): void {
+    this.playlistIndex = this.playlist.findIndex(
+      (e) => e.chapterIndex === this.chapterIndex && e.paragraphIndex === this.paragraphIndex
+    );
   }
 
   /**
@@ -378,13 +529,18 @@ export class AudioService {
       this._state.update((s) => ({ ...s, isPlaying: false }));
       this.saveProgress();
 
-      // Emit event for continuous playback
-      if (this.continuousPlayback && this.documentId) {
+      // Emit event for readers that are listening
+      if (this.documentId) {
         this._playbackEnded.next({
           documentId: this.documentId,
           chapterIndex: this.chapterIndex,
           paragraphIndex: this.paragraphIndex,
         });
+      }
+
+      // Auto-advance to next paragraph using playlist
+      if (this.continuousPlayback && this.playlist.length > 0) {
+        this.autoAdvance();
       }
     };
 
@@ -400,6 +556,7 @@ export class AudioService {
     // Start playback
     await this.audio.play();
     this._state.update((s) => ({ ...s, isPlaying: true }));
+    this.updateMediaSessionState();
   }
 
   private findCurrentSentence(time: number): SentenceTiming | null {
@@ -415,6 +572,7 @@ export class AudioService {
     if (this.audio && !this._state().isPlaying) {
       this.audio.play();
       this._state.update((s) => ({ ...s, isPlaying: true }));
+      this.updateMediaSessionState();
     }
   }
 
@@ -422,6 +580,7 @@ export class AudioService {
     if (this.audio && this._state().isPlaying) {
       this.audio.pause();
       this._state.update((s) => ({ ...s, isPlaying: false }));
+      this.updateMediaSessionState();
       this.saveProgress();
     }
   }
@@ -474,6 +633,71 @@ export class AudioService {
     await this.storage.updateProgress(this.documentId, progress);
   }
 
+  /**
+   * Auto-advance to the next paragraph in the playlist.
+   * Works even when the reader component is not active (e.g. from mini player).
+   */
+  private async autoAdvance(): Promise<void> {
+    this.syncPlaylistIndex();
+    const nextIndex = this.playlistIndex + 1;
+
+    if (nextIndex >= this.playlist.length) {
+      // End of book
+      return;
+    }
+
+    const next = this.playlist[nextIndex];
+    this.playlistIndex = nextIndex;
+    this.chapterIndex = next.chapterIndex;
+    this.paragraphIndex = next.paragraphIndex;
+
+    // Update chapter title in mini player
+    this.updateChapterTitle(next.chapterTitle);
+
+    // Notify reader component to sync its UI if it's active
+    this._positionChanged.next({
+      chapterIndex: next.chapterIndex,
+      paragraphIndex: next.paragraphIndex,
+    });
+
+    // Prefetch next few paragraphs in background
+    this.prefetchAhead(nextIndex);
+
+    // Play the next paragraph
+    await this.loadAndPlay(
+      next.text,
+      this.documentId!,
+      next.chapterIndex,
+      next.paragraphIndex
+    );
+  }
+
+  /**
+   * Prefetch paragraphs ahead of the given playlist index
+   */
+  private prefetchAhead(fromIndex: number): void {
+    const upcoming: Array<{
+      text: string;
+      documentId: string;
+      chapterIndex: number;
+      paragraphIndex: number;
+    }> = [];
+
+    for (let i = fromIndex + 1; i < Math.min(fromIndex + 6, this.playlist.length); i++) {
+      const entry = this.playlist[i];
+      upcoming.push({
+        text: entry.text,
+        documentId: this.documentId!,
+        chapterIndex: entry.chapterIndex,
+        paragraphIndex: entry.paragraphIndex,
+      });
+    }
+
+    if (upcoming.length > 0) {
+      this.prefetchMultipleBackground(upcoming);
+    }
+  }
+
   stop(): void {
     if (this.audio) {
       this.saveProgress();
@@ -489,6 +713,61 @@ export class AudioService {
         currentSentenceId: null,
         error: null,
       });
+      this._currentDocument.set(null);
+      this.updateMediaSessionState();
+    }
+  }
+
+  /**
+   * Fully reset the audio service for a new document.
+   * Clears all state, prefetched segments, and stops playback.
+   */
+  reset(): void {
+    // Stop current playback and clean up audio element
+    if (this.audio) {
+      this.audio.pause();
+      URL.revokeObjectURL(this.audio.src);
+      this.audio = null;
+    }
+
+    // Clear all state
+    this.timings = [];
+    this.documentId = null;
+    this.chapterIndex = 0;
+    this.paragraphIndex = 0;
+    this.playlist = [];
+    this.playlistIndex = -1;
+
+    // Clear all prefetched segments
+    this.prefetchedSegments.clear();
+    this.prefetchInProgress.clear();
+
+    // Reset state signal
+    this._state.set({
+      isPlaying: false,
+      isLoading: false,
+      currentTime: 0,
+      duration: 0,
+      currentSentenceId: null,
+      error: null,
+    });
+
+    // Clear current document
+    this._currentDocument.set(null);
+    this.updateMediaSessionState();
+  }
+
+  /**
+   * Clear prefetched segments for a specific document or all if no documentId provided
+   */
+  clearPrefetchedSegments(documentId?: string): void {
+    if (documentId && this.documentId !== documentId) {
+      // Only clear if we're switching to a different document
+      this.prefetchedSegments.clear();
+      this.prefetchInProgress.clear();
+    } else if (!documentId) {
+      this.prefetchedSegments.clear();
+      this.prefetchInProgress.clear();
     }
   }
 }

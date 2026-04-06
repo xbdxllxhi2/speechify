@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit, OnDestroy, input } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy, input, ViewChild, ElementRef, effect } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -6,9 +6,9 @@ import { Subscription } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 import { SliderModule } from 'primeng/slider';
-import { Select } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { Tooltip } from 'primeng/tooltip';
+import { Drawer } from 'primeng/drawer';
 import { MessageService } from 'primeng/api';
 
 import { StorageService } from '../../core/services/storage.service';
@@ -20,6 +20,7 @@ import {
   Paragraph,
   Voice,
   VoiceOption,
+  TOCEntry,
 } from '../../core/models/document.model';
 
 @Component({
@@ -30,15 +31,18 @@ import {
     FormsModule,
     ButtonModule,
     SliderModule,
-    Select,
     ToastModule,
     Tooltip,
+    Drawer,
   ],
   providers: [MessageService],
   templateUrl: './reader.component.html',
 })
 export class ReaderComponent implements OnInit, OnDestroy {
   readonly id = input.required<string>();
+
+  @ViewChild('progressBar') progressBar!: ElementRef<HTMLDivElement>;
+  @ViewChild('mainContent') mainContent!: ElementRef<HTMLElement>;
 
   private readonly storage = inject(StorageService);
   private readonly audioService = inject(AudioService);
@@ -47,6 +51,9 @@ export class ReaderComponent implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
   private playbackEndedSub?: Subscription;
   private prefetchSub?: Subscription;
+  private prevParagraphSub?: Subscription;
+  private positionChangedSub?: Subscription;
+  private lastScrolledSentenceId: string | null = null;
 
   document = signal<StoredDocument | null>(null);
   currentChapterIndex = signal(0);
@@ -55,6 +62,10 @@ export class ReaderComponent implements OnInit, OnDestroy {
   selectedVoice = signal<Voice>('nova');
   playbackSpeed = signal(1.0);
   continuousMode = signal(true);
+  autoScrollEnabled = signal(true);
+  tocDrawerVisible = signal(false);
+  controlsMinimized = signal(false);
+  voicePanelVisible = signal(false);
 
   // Audio state from service
   isPlaying = this.audioService.isPlaying;
@@ -81,6 +92,17 @@ export class ReaderComponent implements OnInit, OnDestroy {
     return Math.round((this.currentTime() / dur) * 100);
   });
 
+  // Use TOC if available, otherwise use chapters
+  hasToc = computed(() => {
+    const doc = this.document();
+    return doc?.toc && doc.toc.length > 0;
+  });
+
+  tocEntries = computed(() => {
+    const doc = this.document();
+    return doc?.toc || [];
+  });
+
   speedOptions = [
     { label: '0.5x', value: 0.5 },
     { label: '0.75x', value: 0.75 },
@@ -90,28 +112,61 @@ export class ReaderComponent implements OnInit, OnDestroy {
     { label: '2x', value: 2.0 },
   ];
 
+  constructor() {
+    // Auto-scroll effect when sentence changes
+    effect(() => {
+      const sentenceId = this.currentSentenceId();
+      if (sentenceId && this.autoScrollEnabled() && sentenceId !== this.lastScrolledSentenceId) {
+        this.lastScrolledSentenceId = sentenceId;
+        this.scrollToSentence(sentenceId);
+      }
+    });
+  }
+
   async ngOnInit(): Promise<void> {
     await this.loadDocument();
     await this.loadVoices();
     await this.loadSettings();
 
-    // Subscribe to playback ended for continuous mode
-    this.playbackEndedSub = this.audioService.playbackEnded$.subscribe(() => {
-      if (this.continuousMode()) {
-        this.playNextParagraphAuto();
-      }
+    // Sync UI when audio service auto-advances (works even from mini player)
+    this.positionChangedSub = this.audioService.positionChanged$.subscribe((pos) => {
+      this.currentChapterIndex.set(pos.chapterIndex);
+      this.currentParagraphIndex.set(pos.paragraphIndex);
     });
 
     // Subscribe to prefetch requests
     this.prefetchSub = this.audioService.requestNextParagraph$.subscribe(() => {
       this.prefetchNextParagraph();
     });
+
+    // Subscribe to previous paragraph requests (from media session)
+    this.prevParagraphSub = this.audioService.requestPreviousParagraph$.subscribe(() => {
+      this.previousParagraph();
+      this.playCurrentParagraph();
+    });
   }
 
   ngOnDestroy(): void {
     this.playbackEndedSub?.unsubscribe();
     this.prefetchSub?.unsubscribe();
-    this.audioService.stop();
+    this.prevParagraphSub?.unsubscribe();
+    this.positionChangedSub?.unsubscribe();
+    // Don't stop audio - let it continue playing via mini player
+    // Save progress before leaving
+    this.saveProgress();
+  }
+
+  private async saveProgress(): Promise<void> {
+    const doc = this.document();
+    if (!doc) return;
+
+    await this.storage.updateProgress(doc.id, {
+      chapterIndex: this.currentChapterIndex(),
+      paragraphIndex: this.currentParagraphIndex(),
+      sentenceIndex: 0,
+      audioTime: this.currentTime(),
+      lastPlayedAt: new Date(),
+    });
   }
 
   private async loadDocument(): Promise<void> {
@@ -128,10 +183,35 @@ export class ReaderComponent implements OnInit, OnDestroy {
 
     this.document.set(doc);
 
+    // Check if we're loading a different document than what's currently playing
+    const currentDoc = this.audioService.currentDocument();
+    if (currentDoc?.id !== doc.id) {
+      // Different document - reset audio service
+      this.audioService.reset();
+    }
+
+    // Set the full playlist so audio service can auto-advance through the whole book
+    this.audioService.setPlaylist(doc.chapters, doc.id);
+
+    // Set current document for mini player
+    this.audioService.setCurrentDocument({
+      id: doc.id,
+      title: doc.title,
+      author: doc.author,
+      coverImage: doc.coverImage,
+      chapterTitle: doc.chapters[0]?.title,
+    });
+
     // Restore progress
     if (doc.progress) {
       this.currentChapterIndex.set(doc.progress.chapterIndex);
       this.currentParagraphIndex.set(doc.progress.paragraphIndex);
+
+      // Update chapter title based on progress
+      const chapter = doc.chapters[doc.progress.chapterIndex];
+      if (chapter) {
+        this.audioService.updateChapterTitle(chapter.title);
+      }
     }
   }
 
@@ -265,7 +345,6 @@ export class ReaderComponent implements OnInit, OnDestroy {
 
   previousParagraph(): void {
     const current = this.currentParagraphIndex();
-    const chapter = this.currentChapter();
 
     if (current > 0) {
       this.currentParagraphIndex.set(current - 1);
@@ -276,10 +355,11 @@ export class ReaderComponent implements OnInit, OnDestroy {
       if (doc) {
         const newChapter = doc.chapters[newChapterIndex];
         this.currentParagraphIndex.set(newChapter.paragraphs.length - 1);
+        this.audioService.updateChapterTitle(newChapter.title);
       }
     }
 
-    this.audioService.stop();
+    this.playCurrentParagraph();
   }
 
   nextParagraph(): void {
@@ -292,37 +372,13 @@ export class ReaderComponent implements OnInit, OnDestroy {
     if (current < chapter.paragraphs.length - 1) {
       this.currentParagraphIndex.set(current + 1);
     } else if (this.currentChapterIndex() < doc.chapters.length - 1) {
-      this.currentChapterIndex.set(this.currentChapterIndex() + 1);
+      const newChapterIndex = this.currentChapterIndex() + 1;
+      this.currentChapterIndex.set(newChapterIndex);
       this.currentParagraphIndex.set(0);
+      this.audioService.updateChapterTitle(doc.chapters[newChapterIndex].title);
     }
 
-    this.audioService.stop();
-  }
-
-  private playNextParagraphAuto(): void {
-    const chapter = this.currentChapter();
-    const doc = this.document();
-    if (!chapter || !doc) return;
-
-    const current = this.currentParagraphIndex();
-
-    // Move to next paragraph
-    if (current < chapter.paragraphs.length - 1) {
-      this.currentParagraphIndex.set(current + 1);
-      this.playCurrentParagraph();
-    } else if (this.currentChapterIndex() < doc.chapters.length - 1) {
-      // Move to next chapter
-      this.currentChapterIndex.set(this.currentChapterIndex() + 1);
-      this.currentParagraphIndex.set(0);
-      this.playCurrentParagraph();
-    } else {
-      // End of document
-      this.messageService.add({
-        severity: 'info',
-        summary: 'Complete',
-        detail: 'You have reached the end of the document',
-      });
-    }
+    this.playCurrentParagraph();
   }
 
   toggleContinuousMode(): void {
@@ -348,15 +404,53 @@ export class ReaderComponent implements OnInit, OnDestroy {
   }
 
   selectChapter(index: number): void {
+    const doc = this.document();
     this.currentChapterIndex.set(index);
     this.currentParagraphIndex.set(0);
-    this.audioService.stop();
+    this.tocDrawerVisible.set(false); // Close drawer after selection
+
+    // Update chapter title for mini player
+    if (doc) {
+      const chapter = doc.chapters[index];
+      if (chapter) {
+        this.audioService.updateChapterTitle(chapter.title);
+      }
+    }
+
+    // Scroll to chapter after DOM update
+    setTimeout(() => this.scrollToCurrentParagraph(), 50);
+
+    this.playCurrentParagraph();
+  }
+
+  selectTocEntry(entry: TOCEntry, index: number): void {
+    // For EPUBs, TOC entries may have href that maps to chapters
+    // We'll use the index as a simple mapping for now
+    // A more sophisticated approach would match href to chapter IDs
+    const doc = this.document();
+    if (!doc) return;
+
+    // Try to find matching chapter by title or use index
+    let chapterIndex = doc.chapters.findIndex(
+      ch => ch.title.toLowerCase().includes(entry.title.toLowerCase().slice(0, 20))
+    );
+
+    if (chapterIndex === -1) {
+      // Fall back to using index (limited to available chapters)
+      chapterIndex = Math.min(index, doc.chapters.length - 1);
+    }
+
+    this.selectChapter(chapterIndex);
+  }
+
+  toggleTocDrawer(): void {
+    this.tocDrawerVisible.update(v => !v);
   }
 
   selectParagraph(chapterIndex: number, paragraphIndex: number): void {
     this.currentChapterIndex.set(chapterIndex);
     this.currentParagraphIndex.set(paragraphIndex);
-    this.audioService.stop();
+    this.playCurrentParagraph();
   }
 
   onSentenceClick(sentenceId: string): void {
@@ -381,5 +475,92 @@ export class ReaderComponent implements OnInit, OnDestroy {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * Handle click on progress bar to seek to that position
+   */
+  onProgressBarClick(event: MouseEvent): void {
+    const bar = this.progressBar?.nativeElement;
+    if (!bar || this.duration() === 0) return;
+
+    const rect = bar.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const percent = clickX / rect.width;
+    const seekTime = percent * this.duration();
+
+    this.audioService.seekTo(seekTime);
+  }
+
+  /**
+   * Toggle auto-scroll feature
+   */
+  toggleAutoScroll(): void {
+    this.autoScrollEnabled.update(v => !v);
+  }
+
+  /**
+   * Toggle minimized controls
+   */
+  toggleControlsMinimized(): void {
+    this.controlsMinimized.update(v => !v);
+  }
+
+  /**
+   * Toggle voice panel visibility
+   */
+  toggleVoicePanel(): void {
+    this.voicePanelVisible.update(v => !v);
+  }
+
+  /**
+   * Sync view to current reading position
+   */
+  syncToCurrentPosition(): void {
+    const sentenceId = this.currentSentenceId();
+    if (sentenceId) {
+      this.scrollToSentence(sentenceId);
+    } else {
+      this.scrollToCurrentParagraph();
+    }
+  }
+
+  /**
+   * Get current voice name
+   */
+  getCurrentVoiceName(): string {
+    const voice = this.voices().find(v => v.id === this.selectedVoice());
+    return voice?.name || 'Nova';
+  }
+
+  /**
+   * Scroll to the sentence element smoothly
+   */
+  private scrollToSentence(sentenceId: string): void {
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      const element = document.getElementById(`sentence-${sentenceId}`);
+      if (element) {
+        element.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+    });
+  }
+
+  /**
+   * Scroll to current paragraph
+   */
+  scrollToCurrentParagraph(): void {
+    const chapterIdx = this.currentChapterIndex();
+    const paraIdx = this.currentParagraphIndex();
+    const element = document.getElementById(`para-${chapterIdx}-${paraIdx}`);
+    if (element) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
   }
 }

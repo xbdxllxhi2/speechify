@@ -1,130 +1,138 @@
-<div class="min-h-screen bg-slate-50 flex flex-col">
+<div class="min-h-screen flex flex-col bg-slate-50 transition-colors overflow-x-hidden">
   <p-toast />
 
-  <!-- Header -->
-  <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-4">
-          <p-button
-            icon="pi pi-arrow-left"
-            [text]="true"
-            severity="secondary"
-            (onClick)="goBack()"
-            pTooltip="Back to Library"
-          />
-          <div>
-            <h1 class="text-lg font-semibold text-slate-900 truncate max-w-md">
-              {{ document()?.title || 'Loading...' }}
-            </h1>
-            @if (currentChapter()) {
-              <p class="text-sm text-slate-500">{{ currentChapter()?.title }}</p>
-            }
-          </div>
+  <!-- Minimal Header -->
+  <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 safe-area-top">
+    <div class="max-w-5xl mx-auto px-4 py-3">
+      <div class="flex items-center justify-between gap-4">
+        <!-- Left: Back + TOC -->
+        <div class="flex items-center gap-2">
+          <button
+            class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
+            (click)="goBack()"
+          >
+            <i class="pi pi-arrow-left text-lg"></i>
+          </button>
+          <button
+            class="lg:hidden w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
+            (click)="toggleTocDrawer()"
+          >
+            <i class="pi pi-list text-lg"></i>
+          </button>
         </div>
 
-        <!-- Voice & Speed Controls -->
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2">
-            <label class="text-sm text-slate-600">Voice:</label>
-            <p-select
-              [options]="voices()"
-              [ngModel]="selectedVoice()"
-              (ngModelChange)="onVoiceChange($event)"
-              optionLabel="name"
-              optionValue="id"
-              styleClass="w-32"
-              [appendTo]="'body'"
-            />
-          </div>
-          <div class="flex items-center gap-2">
-            <label class="text-sm text-slate-600">Speed:</label>
-            <p-select
-              [options]="speedOptions"
-              [ngModel]="playbackSpeed()"
-              (ngModelChange)="onSpeedChange($event)"
-              optionLabel="label"
-              optionValue="value"
-              styleClass="w-24"
-              [appendTo]="'body'"
-            />
-          </div>
+        <!-- Center: Title -->
+        <div class="flex-1 text-center min-w-0">
+          <h1 class="text-sm font-semibold truncate">
+            {{ document()?.title || 'Loading...' }}
+          </h1>
+          @if (currentChapter()) {
+            <p class="text-xs text-slate-500 truncate">{{ currentChapter()?.title }}</p>
+          }
+        </div>
+
+        <!-- Right: Sync button -->
+        <div class="flex items-center gap-2">
+          <button
+            class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
+            (click)="syncToCurrentPosition()"
+            pTooltip="Sync to current"
+          >
+            <i class="pi pi-bolt text-lg"></i>
+          </button>
         </div>
       </div>
     </div>
   </header>
 
   <!-- Main Content -->
-  <div class="flex-1 flex">
-    <!-- Sidebar - Chapter List -->
-    <aside class="w-64 bg-white border-r border-slate-200 overflow-y-auto hidden lg:block">
-      <div class="p-4">
-        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Chapters</h3>
-        <nav class="space-y-1">
-          @for (chapter of document()?.chapters; track chapter.id; let i = $index) {
-            <button
-              class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors"
-              [class.bg-blue-50]="currentChapterIndex() === i"
-              [class.text-blue-700]="currentChapterIndex() === i"
-              [class.text-slate-700]="currentChapterIndex() !== i"
-              [class.hover:bg-slate-100]="currentChapterIndex() !== i"
-              (click)="selectChapter(i)"
-            >
-              <span class="truncate block">{{ chapter.title }}</span>
-              <span class="text-xs text-slate-400">{{ chapter.paragraphs.length }} paragraphs</span>
-            </button>
+  <div class="flex-1 flex overflow-hidden">
+    <!-- Sidebar - Chapter List (Desktop) -->
+    <aside class="w-72 bg-white border-r border-slate-200 hidden lg:flex lg:flex-col" style="height: calc(100vh - 57px);">
+      <div class="flex-1 overflow-y-auto p-4">
+        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">
+          {{ hasToc() ? 'Contents' : 'Chapters' }}
+        </h3>
+        <nav class="space-y-0.5">
+          @if (hasToc()) {
+            @for (entry of tocEntries(); track $index; let i = $index) {
+              <button
+                class="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all"
+                [style.padding-left.rem]="0.75 + (entry.level - 1) * 0.5"
+                [class.bg-emerald-50]="currentChapterIndex() === i"
+                [class.text-emerald-700]="currentChapterIndex() === i"
+                [class.font-medium]="currentChapterIndex() === i || entry.level === 1"
+                [class.text-slate-700]="currentChapterIndex() !== i"
+                [class.text-slate-500]="entry.level > 1 && currentChapterIndex() !== i"
+                [class.hover:bg-slate-100]="currentChapterIndex() !== i"
+                (click)="selectTocEntry(entry, i)"
+              >
+                <span class="line-clamp-2">{{ entry.title }}</span>
+              </button>
+            }
+          } @else {
+            @for (chapter of document()?.chapters; track chapter.id; let i = $index) {
+              <button
+                class="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all"
+                [class.bg-emerald-50]="currentChapterIndex() === i"
+                [class.text-emerald-700]="currentChapterIndex() === i"
+                [class.font-medium]="currentChapterIndex() === i"
+                [class.text-slate-700]="currentChapterIndex() !== i"
+                [class.hover:bg-slate-100]="currentChapterIndex() !== i"
+                (click)="selectChapter(i)"
+              >
+                <span class="line-clamp-2">{{ chapter.title }}</span>
+              </button>
+            }
           }
         </nav>
       </div>
     </aside>
 
     <!-- Text Content -->
-    <main class="flex-1 overflow-y-auto pb-32">
-      <div class="max-w-3xl mx-auto px-6 py-8">
+    <main #mainContent class="flex-1 overflow-y-auto font-serif-reading" [style.padding-bottom.px]="controlsMinimized() ? 100 : 200" style="height: calc(100vh - 57px);">
+      <div class="max-w-2xl mx-auto px-5 md:px-8 py-8">
         @if (document()) {
           @for (chapter of document()!.chapters; track chapter.id; let chapterIdx = $index) {
             <div
+              [id]="'chapter-' + chapterIdx"
               class="mb-12"
-              [class.opacity-50]="chapterIdx !== currentChapterIndex()"
             >
               <!-- Chapter Title -->
-              <h2 class="text-2xl font-bold text-slate-900 mb-6 pb-3 border-b border-slate-200">
+              <h2 class="text-xl md:text-2xl font-bold mb-6">
                 {{ chapter.title }}
               </h2>
 
               <!-- Paragraphs -->
               @for (paragraph of chapter.paragraphs; track paragraph.id; let paraIdx = $index) {
                 <div
-                  class="mb-6 p-4 rounded-lg transition-all cursor-pointer"
-                  [class.bg-blue-50]="chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex()"
-                  [class.border-l-4]="chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex()"
-                  [class.border-blue-500]="chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex()"
-                  [class.hover:bg-slate-100]="!(chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex())"
+                  [id]="'para-' + chapterIdx + '-' + paraIdx"
+                  class="mb-5 py-3 px-4 -mx-4 rounded-xl transition-all cursor-pointer scroll-mt-20"
+                  [class.bg-emerald-50]="chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex()"
+                  [class.border-l-3]="chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex()"
+                  [class.border-emerald-500]="chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex()"
+                  [class.hover:bg-slate-50]="!(chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex())"
                   (click)="selectParagraph(chapterIdx, paraIdx)"
                 >
                   @if (paragraph.isHeading) {
                     <h3
                       class="font-semibold"
-                      [class.text-xl]="paragraph.headingLevel === 1"
-                      [class.text-lg]="paragraph.headingLevel === 2"
-                      [class.text-base]="paragraph.headingLevel && paragraph.headingLevel > 2"
+                      [class.text-lg]="paragraph.headingLevel === 1"
+                      [class.text-base]="paragraph.headingLevel && paragraph.headingLevel > 1"
                     >
                       {{ paragraph.text }}
                     </h3>
                   } @else {
-                    <p class="text-slate-700 leading-relaxed">
+                    <p class="text-slate-700 leading-[1.8] text-[18px]">
                       @for (sentence of paragraph.sentences; track sentence.id) {
                         <span
-                          class="sentence"
+                          [id]="'sentence-' + sentence.id"
+                          class="sentence scroll-mt-32"
                           [class.active]="isSentenceActive(sentence.id)"
                           (click)="onSentenceClick(sentence.id); $event.stopPropagation()"
                         >{{ sentence.text }} </span>
                       }
                     </p>
-                  }
-
-                  @if (paragraph.page) {
-                    <span class="text-xs text-slate-400 mt-2 block">Page {{ paragraph.page }}</span>
                   }
                 </div>
               }
@@ -132,12 +140,12 @@
           }
         } @else {
           <!-- Loading State -->
-          <div class="space-y-6">
-            @for (i of [1, 2, 3, 4, 5]; track i) {
-              <div class="animate-pulse">
-                <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
-                <div class="h-4 bg-slate-200 rounded w-full mb-2"></div>
-                <div class="h-4 bg-slate-200 rounded w-5/6"></div>
+          <div class="space-y-6 animate-pulse">
+            @for (i of [1, 2, 3]; track i) {
+              <div>
+                <div class="h-4 bg-slate-200 rounded w-3/4 mb-3"></div>
+                <div class="h-3 bg-slate-100 rounded w-full mb-2"></div>
+                <div class="h-3 bg-slate-100 rounded w-5/6"></div>
               </div>
             }
           </div>
@@ -146,82 +154,271 @@
     </main>
   </div>
 
-  <!-- Fixed Audio Player Bar -->
-  <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <!-- Progress Bar -->
-      <div class="mb-3">
-        <div class="flex items-center gap-2 text-xs text-slate-500 mb-1">
-          <span>{{ formatTime(currentTime()) }}</span>
-          <div class="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden cursor-pointer">
+  <!-- Audio Player - Minimizable -->
+  <footer
+    class="fixed bottom-0 left-0 right-0 z-20 safe-area-bottom transition-all duration-300"
+    [class.translate-y-0]="!controlsMinimized()"
+  >
+    <!-- Expand button when minimized -->
+    @if (controlsMinimized()) {
+      <div class="bg-white border-t border-slate-200 px-4 py-3">
+        <div class="max-w-2xl mx-auto flex items-center justify-between gap-4">
+          <!-- Mini progress -->
+          <div class="flex-1 h-1 bg-slate-200 rounded-full overflow-hidden">
             <div
-              class="h-full bg-blue-500 rounded-full transition-all"
+              class="h-full bg-emerald-500 rounded-full transition-all"
               [style.width.%]="progressPercent()"
             ></div>
           </div>
-          <span>{{ formatTime(duration()) }}</span>
+
+          <!-- Quick Play -->
+          <button
+            class="w-12 h-12 rounded-full bg-emerald-600 flex items-center justify-center text-white shadow-lg"
+            (click)="togglePlayback()"
+            [disabled]="isLoading()"
+          >
+            @if (isLoading()) {
+              <i class="pi pi-spin pi-spinner text-lg"></i>
+            } @else {
+              <i class="pi text-lg" [class.pi-play]="!isPlaying()" [class.pi-pause]="isPlaying()" [class.ml-0.5]="!isPlaying()"></i>
+            }
+          </button>
+
+          <!-- Expand -->
+          <button
+            class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100"
+            (click)="toggleControlsMinimized()"
+          >
+            <i class="pi pi-chevron-up text-lg"></i>
+          </button>
         </div>
       </div>
+    } @else {
+      <!-- Full Player -->
+      <div class="bg-white border-t border-slate-200 shadow-lg">
+        <div class="max-w-2xl mx-auto px-4 py-4">
+          <!-- Progress Bar -->
+          <div class="mb-4">
+            <div class="flex items-center gap-3 text-xs text-slate-500">
+              <span class="w-10 text-right tabular-nums">{{ formatTime(currentTime()) }}</span>
+              <div
+                #progressBar
+                class="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden cursor-pointer group"
+                (click)="onProgressBarClick($event)"
+              >
+                <div
+                  class="h-full bg-emerald-500 rounded-full transition-all pointer-events-none"
+                  [style.width.%]="progressPercent()"
+                ></div>
+              </div>
+              <span class="w-10 tabular-nums">{{ formatTime(duration()) }}</span>
+            </div>
+          </div>
 
-      <!-- Controls -->
-      <div class="flex items-center justify-center gap-4">
-        <p-button
-          icon="pi pi-step-backward"
-          [text]="true"
-          severity="secondary"
-          size="large"
-          (onClick)="previousParagraph()"
-          pTooltip="Previous paragraph"
-        />
-        <p-button
-          icon="pi pi-replay"
-          [text]="true"
-          severity="secondary"
-          (onClick)="skipBack()"
-          pTooltip="Back 10s"
-        />
-        <p-button
-          [icon]="isPlaying() ? 'pi pi-pause' : 'pi pi-play'"
-          severity="primary"
-          [rounded]="true"
-          [raised]="true"
-          (onClick)="togglePlayback()"
-          [loading]="isLoading()"
-          styleClass="w-14 h-14"
-        />
-        <p-button
-          icon="pi pi-forward"
-          [text]="true"
-          severity="secondary"
-          (onClick)="skipForward()"
-          pTooltip="Forward 10s"
-        />
-        <p-button
-          icon="pi pi-step-forward"
-          [text]="true"
-          severity="secondary"
-          size="large"
-          (onClick)="nextParagraph()"
-          pTooltip="Next paragraph"
-        />
-        <div class="border-l border-slate-300 h-8 mx-2"></div>
-        <p-button
-          [icon]="continuousMode() ? 'pi pi-sync' : 'pi pi-stop-circle'"
-          [text]="true"
-          [severity]="continuousMode() ? 'primary' : 'secondary'"
-          (onClick)="toggleContinuousMode()"
-          [pTooltip]="continuousMode() ? 'Continuous mode ON - will auto-play next' : 'Continuous mode OFF - stops after each paragraph'"
-        />
-      </div>
+          <!-- Main Controls Row -->
+          <div class="flex items-center justify-center gap-3">
+            <!-- Speed Pill -->
+            <button
+              class="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+              (click)="onSpeedChange(playbackSpeed() >= 2 ? 0.5 : playbackSpeed() + 0.25)"
+            >
+              {{ playbackSpeed() }}x
+            </button>
 
-      <!-- Current Paragraph Info -->
-      @if (currentParagraph()) {
-        <div class="text-center mt-3">
-          <p class="text-sm text-slate-500 truncate max-w-lg mx-auto">
-            {{ currentParagraph()!.text.substring(0, 100) }}{{ currentParagraph()!.text.length > 100 ? '...' : '' }}
-          </p>
+            <!-- Skip Back -->
+            <button
+              class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
+              (click)="previousParagraph()"
+            >
+              <i class="pi pi-step-backward"></i>
+            </button>
+
+            <button
+              class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
+              (click)="skipBack()"
+            >
+              <i class="pi pi-replay"></i>
+            </button>
+
+            <!-- Main Play Button -->
+            <button
+              class="w-16 h-16 rounded-full bg-emerald-600 flex items-center justify-center text-white shadow-lg hover:scale-105 active:scale-95 transition-transform mx-2"
+              (click)="togglePlayback()"
+              [disabled]="isLoading()"
+            >
+              @if (isLoading()) {
+                <i class="pi pi-spin pi-spinner text-2xl"></i>
+              } @else {
+                <i class="pi text-2xl" [class.pi-play]="!isPlaying()" [class.pi-pause]="isPlaying()" [class.ml-1]="!isPlaying()"></i>
+              }
+            </button>
+
+            <button
+              class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
+              (click)="skipForward()"
+            >
+              <i class="pi pi-forward"></i>
+            </button>
+
+            <!-- Skip Forward -->
+            <button
+              class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
+              (click)="nextParagraph()"
+            >
+              <i class="pi pi-step-forward"></i>
+            </button>
+
+            <!-- Voice Button -->
+            <button
+              class="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors flex items-center gap-1.5"
+              (click)="toggleVoicePanel()"
+            >
+              <i class="pi pi-user"></i>
+              {{ getCurrentVoiceName() }}
+            </button>
+          </div>
+
+          <!-- Bottom Row: Auto-scroll, Continuous, Minimize -->
+          <div class="flex items-center justify-center gap-2 mt-4">
+            <button
+              class="px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5"
+              [class.bg-emerald-100]="autoScrollEnabled()"
+              [class.text-emerald-700]="autoScrollEnabled()"
+              [class.bg-slate-100]="!autoScrollEnabled()"
+              [class.text-slate-500]="!autoScrollEnabled()"
+              (click)="toggleAutoScroll()"
+            >
+              <i class="pi pi-arrows-v text-xs"></i>
+              Auto-scroll
+            </button>
+
+            <button
+              class="px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5"
+              [class.bg-emerald-100]="continuousMode()"
+              [class.text-emerald-700]="continuousMode()"
+              [class.bg-slate-100]="!continuousMode()"
+              [class.text-slate-500]="!continuousMode()"
+              (click)="toggleContinuousMode()"
+            >
+              <i class="pi text-xs" [class.pi-sync]="continuousMode()" [class.pi-stop-circle]="!continuousMode()"></i>
+              Continuous
+            </button>
+
+            <button
+              class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors"
+              (click)="toggleControlsMinimized()"
+              pTooltip="Minimize"
+            >
+              <i class="pi pi-chevron-down text-sm"></i>
+            </button>
+          </div>
         </div>
-      }
-    </div>
+      </div>
+    }
   </footer>
+
+  <!-- Voice Selection Panel (Bottom Sheet) -->
+  <p-drawer
+    [(visible)]="voicePanelVisible"
+    position="bottom"
+    [modal]="true"
+    styleClass="!h-auto !max-h-[70vh] !rounded-t-3xl"
+  >
+    <ng-template #header>
+      <div class="flex items-center justify-between w-full px-2">
+        <span class="text-lg font-semibold">Select Voice</span>
+      </div>
+    </ng-template>
+
+    <div class="px-2 pb-6">
+      <div class="grid grid-cols-2 gap-3">
+        @for (voice of voices(); track voice.id) {
+          <button
+            class="p-4 rounded-2xl text-left transition-all"
+            [class.bg-emerald-50]="selectedVoice() === voice.id"
+            [class.border-2]="selectedVoice() === voice.id"
+            [class.border-emerald-500]="selectedVoice() === voice.id"
+            [class.bg-slate-50]="selectedVoice() !== voice.id"
+            [class.border]="selectedVoice() !== voice.id"
+            [class.border-slate-200]="selectedVoice() !== voice.id"
+            [class.hover:border-emerald-300]="selectedVoice() !== voice.id"
+            (click)="onVoiceChange(voice.id); voicePanelVisible.set(false)"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-full flex items-center justify-center"
+                [class.bg-emerald-500]="selectedVoice() === voice.id"
+                [class.text-white]="selectedVoice() === voice.id"
+                [class.bg-slate-200]="selectedVoice() !== voice.id"
+                [class.text-slate-500]="selectedVoice() !== voice.id"
+              >
+                <i class="pi pi-user"></i>
+              </div>
+              <div>
+                <p class="font-semibold">{{ voice.name }}</p>
+                @if (voice.description) {
+                  <p class="text-xs text-slate-500">{{ voice.description }}</p>
+                }
+              </div>
+            </div>
+            @if (selectedVoice() === voice.id) {
+              <div class="absolute top-3 right-3">
+                <i class="pi pi-check-circle text-emerald-500"></i>
+              </div>
+            }
+          </button>
+        }
+      </div>
+    </div>
+  </p-drawer>
+
+  <!-- Mobile TOC Drawer -->
+  <p-drawer
+    [(visible)]="tocDrawerVisible"
+    position="left"
+    [modal]="true"
+    styleClass="w-80"
+  >
+    <ng-template #header>
+      <div class="flex items-center gap-3">
+        <i class="pi pi-list text-emerald-600"></i>
+        <span class="font-semibold">{{ hasToc() ? 'Contents' : 'Chapters' }}</span>
+      </div>
+    </ng-template>
+
+    <div class="p-2">
+      <nav class="space-y-0.5">
+        @if (hasToc()) {
+          @for (entry of tocEntries(); track $index; let i = $index) {
+            <button
+              class="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all"
+              [style.padding-left.rem]="0.75 + (entry.level - 1) * 0.5"
+              [class.bg-emerald-50]="currentChapterIndex() === i"
+              [class.text-emerald-700]="currentChapterIndex() === i"
+              [class.font-medium]="currentChapterIndex() === i || entry.level === 1"
+              [class.text-slate-700]="currentChapterIndex() !== i"
+              [class.hover:bg-slate-100]="currentChapterIndex() !== i"
+              (click)="selectTocEntry(entry, i)"
+            >
+              <span class="line-clamp-2">{{ entry.title }}</span>
+            </button>
+          }
+        } @else {
+          @for (chapter of document()?.chapters; track chapter.id; let i = $index) {
+            <button
+              class="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all"
+              [class.bg-emerald-50]="currentChapterIndex() === i"
+              [class.text-emerald-700]="currentChapterIndex() === i"
+              [class.font-medium]="currentChapterIndex() === i"
+              [class.text-slate-700]="currentChapterIndex() !== i"
+              [class.hover:bg-slate-100]="currentChapterIndex() !== i"
+              (click)="selectChapter(i)"
+            >
+              <span class="line-clamp-2">{{ chapter.title }}</span>
+            </button>
+          }
+        }
+      </nav>
+    </div>
+  </p-drawer>
 </div>

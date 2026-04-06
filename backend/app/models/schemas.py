@@ -9,6 +9,12 @@ class DocumentType(str, Enum):
     EPUB = "epub"
 
 
+class DocumentClassification(str, Enum):
+    """Classification of document content type."""
+    BOOK = "book"
+    DOCUMENT = "document"
+
+
 class Voice(str, Enum):
     # OpenAI voices
     ALLOY = "alloy"
@@ -48,12 +54,21 @@ class Chapter(BaseModel):
     paragraphs: list[Paragraph]
 
 
+class TOCEntry(BaseModel):
+    """Table of contents entry."""
+    title: str
+    href: str = ""
+    level: int = 1
+
+
 class ParsedDocument(BaseModel):
     id: str
     title: str
     author: Optional[str] = None
     type: DocumentType
+    classification: DocumentClassification = DocumentClassification.DOCUMENT
     chapters: list[Chapter]
+    toc: list[TOCEntry] = []  # Table of contents for navigation
     total_characters: int
     total_sentences: int
     created_at: datetime
