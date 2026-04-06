@@ -41,7 +41,7 @@ export interface BatchTTSResponse {
 })
 export class ApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:8000/api';
+  private readonly baseUrl = '/api';
 
   parseDocument(file: File): Observable<ParsedDocument> {
     const formData = new FormData();
