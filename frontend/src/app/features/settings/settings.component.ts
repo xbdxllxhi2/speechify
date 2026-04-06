@@ -12,8 +12,8 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { StorageService } from '../../core/services/storage.service';
 import { ApiService } from '../../core/services/api.service';
-import { ThemeService } from '../../core/services/theme.service';
-import { Voice, VoiceOption, AppSettings, DEFAULT_SETTINGS, ThemeMode } from '../../core/models/document.model';
+import { AudioService } from '../../core/services/audio.service';
+import { Voice, VoiceOption, AppSettings, DEFAULT_SETTINGS } from '../../core/models/document.model';
 
 @Component({
   selector: 'app-settings',
@@ -34,17 +34,19 @@ import { Voice, VoiceOption, AppSettings, DEFAULT_SETTINGS, ThemeMode } from '..
 export class SettingsComponent implements OnInit {
   private readonly storage = inject(StorageService);
   private readonly api = inject(ApiService);
-  private readonly themeService = inject(ThemeService);
+  private readonly audioService = inject(AudioService);
   private readonly router = inject(Router);
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
+
+  // Expose for template
+  hasActivePlayback = this.audioService.hasActivePlayback;
 
   voices = signal<VoiceOption[]>([]);
   selectedVoice = signal<Voice>('nova');
   playbackSpeed = signal(1.0);
   autoPlay = signal(true);
   highlightMode = signal<'sentence' | 'word'>('sentence');
-  selectedTheme = signal<ThemeMode>('system');
 
   storageStats = signal<{ documentsCount: number; audioCacheSize: number }>({
     documentsCount: 0,
@@ -65,12 +67,6 @@ export class SettingsComponent implements OnInit {
   highlightOptions = [
     { label: 'Sentence', value: 'sentence' },
     { label: 'Word', value: 'word' },
-  ];
-
-  themeOptions = [
-    { label: 'Light', value: 'light', icon: 'pi pi-sun' },
-    { label: 'Dark', value: 'dark', icon: 'pi pi-moon' },
-    { label: 'System', value: 'system', icon: 'pi pi-desktop' },
   ];
 
   async ngOnInit(): Promise<void> {
@@ -101,7 +97,6 @@ export class SettingsComponent implements OnInit {
     this.playbackSpeed.set(settings.speed);
     this.autoPlay.set(settings.autoPlay);
     this.highlightMode.set(settings.highlightMode);
-    this.selectedTheme.set(settings.theme);
   }
 
   private async loadStorageStats(): Promise<void> {
@@ -134,12 +129,6 @@ export class SettingsComponent implements OnInit {
   async onHighlightModeChange(mode: 'sentence' | 'word'): Promise<void> {
     this.highlightMode.set(mode);
     await this.storage.setSetting('highlightMode', mode);
-    this.showSaved();
-  }
-
-  async onThemeChange(theme: ThemeMode): Promise<void> {
-    this.selectedTheme.set(theme);
-    await this.themeService.setTheme(theme);
     this.showSaved();
   }
 

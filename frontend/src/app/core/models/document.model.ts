@@ -108,7 +108,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   voice: 'nova',
   speed: 1.0,
-  theme: 'system',
+  theme: 'light',
   autoPlay: true,
   highlightMode: 'sentence',
 };

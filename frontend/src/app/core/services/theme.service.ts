@@ -11,7 +11,7 @@ export class ThemeService {
   private readonly storage = inject(StorageService);
   private mediaQuery: MediaQueryList | null = null;
 
-  private readonly _themeMode = signal<ThemeMode>('system');
+  private readonly _themeMode = signal<ThemeMode>('light');
   private readonly _systemPrefersDark = signal(false);
 
   readonly themeMode = this._themeMode.asReadonly();

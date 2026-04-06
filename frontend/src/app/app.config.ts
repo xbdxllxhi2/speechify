@@ -14,7 +14,7 @@ import { definePreset } from '@primeng/themes';
 import { routes } from './app.routes';
 import { ThemeService } from './core/services/theme.service';
 
-// Custom emerald theme preset
+// Custom emerald theme preset - light only
 const ListenifyTheme = definePreset(Aura, {
   semantic: {
     primary: {
@@ -59,34 +59,6 @@ const ListenifyTheme = definePreset(Aura, {
           950: '{slate.950}',
         },
       },
-      dark: {
-        primary: {
-          color: '{emerald.400}',
-          contrastColor: '{slate.950}',
-          hoverColor: '{emerald.300}',
-          activeColor: '{emerald.200}',
-        },
-        highlight: {
-          background: 'color-mix(in srgb, {emerald.400}, transparent 84%)',
-          focusBackground: 'color-mix(in srgb, {emerald.400}, transparent 76%)',
-          color: 'rgba(255,255,255,.87)',
-          focusColor: 'rgba(255,255,255,.87)',
-        },
-        surface: {
-          0: '{slate.950}',
-          50: '{slate.900}',
-          100: '{slate.800}',
-          200: '{slate.700}',
-          300: '{slate.600}',
-          400: '{slate.500}',
-          500: '{slate.400}',
-          600: '{slate.300}',
-          700: '{slate.200}',
-          800: '{slate.100}',
-          900: '{slate.50}',
-          950: '#ffffff',
-        },
-      },
     },
   },
 });
@@ -109,7 +81,7 @@ export const appConfig: ApplicationConfig = {
       theme: {
         preset: ListenifyTheme,
         options: {
-          darkModeSelector: '.dark',
+          darkModeSelector: false,
           cssLayer: false,
         },
       },

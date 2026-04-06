@@ -1,20 +1,20 @@
-<div class="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 transition-colors overflow-x-hidden">
+<div class="min-h-screen flex flex-col bg-slate-50 transition-colors overflow-x-hidden">
   <p-toast />
 
   <!-- Minimal Header -->
-  <header class="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 safe-area-top">
+  <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 safe-area-top">
     <div class="max-w-5xl mx-auto px-4 py-3">
       <div class="flex items-center justify-between gap-4">
         <!-- Left: Back + TOC -->
         <div class="flex items-center gap-2">
           <button
-            class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
             (click)="goBack()"
           >
             <i class="pi pi-arrow-left text-lg"></i>
           </button>
           <button
-            class="lg:hidden w-10 h-10 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            class="lg:hidden w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
             (click)="toggleTocDrawer()"
           >
             <i class="pi pi-list text-lg"></i>
@@ -23,22 +23,22 @@
 
         <!-- Center: Title -->
         <div class="flex-1 text-center min-w-0">
-          <h1 class="text-sm font-semibold text-slate-900 dark:text-white truncate">
+          <h1 class="text-sm font-semibold truncate">
             {{ document()?.title || 'Loading...' }}
           </h1>
           @if (currentChapter()) {
-            <p class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ currentChapter()?.title }}</p>
+            <p class="text-xs text-slate-500 truncate">{{ currentChapter()?.title }}</p>
           }
         </div>
 
         <!-- Right: Sync button -->
         <div class="flex items-center gap-2">
           <button
-            class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
             (click)="syncToCurrentPosition()"
             pTooltip="Sync to current"
           >
-            <i class="pi pi-arrows-v text-lg"></i>
+            <i class="pi pi-bolt text-lg"></i>
           </button>
         </div>
       </div>
@@ -48,9 +48,9 @@
   <!-- Main Content -->
   <div class="flex-1 flex overflow-hidden">
     <!-- Sidebar - Chapter List (Desktop) -->
-    <aside class="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 hidden lg:flex lg:flex-col" style="height: calc(100vh - 57px);">
+    <aside class="w-72 bg-white border-r border-slate-200 hidden lg:flex lg:flex-col" style="height: calc(100vh - 57px);">
       <div class="flex-1 overflow-y-auto p-4">
-        <h3 class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 px-2">
+        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">
           {{ hasToc() ? 'Contents' : 'Chapters' }}
         </h3>
         <nav class="space-y-0.5">
@@ -60,16 +60,11 @@
                 class="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all"
                 [style.padding-left.rem]="0.75 + (entry.level - 1) * 0.5"
                 [class.bg-emerald-50]="currentChapterIndex() === i"
-                [class.dark:bg-emerald-900/20]="currentChapterIndex() === i"
                 [class.text-emerald-700]="currentChapterIndex() === i"
-                [class.dark:text-emerald-400]="currentChapterIndex() === i"
                 [class.font-medium]="currentChapterIndex() === i || entry.level === 1"
                 [class.text-slate-700]="currentChapterIndex() !== i"
-                [class.dark:text-slate-300]="currentChapterIndex() !== i"
                 [class.text-slate-500]="entry.level > 1 && currentChapterIndex() !== i"
-                [class.dark:text-slate-400]="entry.level > 1 && currentChapterIndex() !== i"
                 [class.hover:bg-slate-100]="currentChapterIndex() !== i"
-                [class.dark:hover:bg-slate-800]="currentChapterIndex() !== i"
                 (click)="selectTocEntry(entry, i)"
               >
                 <span class="line-clamp-2">{{ entry.title }}</span>
@@ -80,14 +75,10 @@
               <button
                 class="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all"
                 [class.bg-emerald-50]="currentChapterIndex() === i"
-                [class.dark:bg-emerald-900/20]="currentChapterIndex() === i"
                 [class.text-emerald-700]="currentChapterIndex() === i"
-                [class.dark:text-emerald-400]="currentChapterIndex() === i"
                 [class.font-medium]="currentChapterIndex() === i"
                 [class.text-slate-700]="currentChapterIndex() !== i"
-                [class.dark:text-slate-300]="currentChapterIndex() !== i"
                 [class.hover:bg-slate-100]="currentChapterIndex() !== i"
-                [class.dark:hover:bg-slate-800]="currentChapterIndex() !== i"
                 (click)="selectChapter(i)"
               >
                 <span class="line-clamp-2">{{ chapter.title }}</span>
@@ -99,7 +90,7 @@
     </aside>
 
     <!-- Text Content -->
-    <main #mainContent class="flex-1 overflow-y-auto" [style.padding-bottom.px]="controlsMinimized() ? 100 : 200" style="height: calc(100vh - 57px);">
+    <main #mainContent class="flex-1 overflow-y-auto font-serif-reading" [style.padding-bottom.px]="controlsMinimized() ? 100 : 200" style="height: calc(100vh - 57px);">
       <div class="max-w-2xl mx-auto px-5 md:px-8 py-8">
         @if (document()) {
           @for (chapter of document()!.chapters; track chapter.id; let chapterIdx = $index) {
@@ -108,7 +99,7 @@
               class="mb-12"
             >
               <!-- Chapter Title -->
-              <h2 class="text-xl md:text-2xl font-bold text-slate-900 dark:text-white mb-6">
+              <h2 class="text-xl md:text-2xl font-bold mb-6">
                 {{ chapter.title }}
               </h2>
 
@@ -118,23 +109,21 @@
                   [id]="'para-' + chapterIdx + '-' + paraIdx"
                   class="mb-5 py-3 px-4 -mx-4 rounded-xl transition-all cursor-pointer scroll-mt-20"
                   [class.bg-emerald-50]="chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex()"
-                  [class.dark:bg-emerald-900/10]="chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex()"
                   [class.border-l-3]="chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex()"
                   [class.border-emerald-500]="chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex()"
                   [class.hover:bg-slate-50]="!(chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex())"
-                  [class.dark:hover:bg-slate-800/30]="!(chapterIdx === currentChapterIndex() && paraIdx === currentParagraphIndex())"
                   (click)="selectParagraph(chapterIdx, paraIdx)"
                 >
                   @if (paragraph.isHeading) {
                     <h3
-                      class="font-semibold text-slate-900 dark:text-white"
+                      class="font-semibold"
                       [class.text-lg]="paragraph.headingLevel === 1"
                       [class.text-base]="paragraph.headingLevel && paragraph.headingLevel > 1"
                     >
                       {{ paragraph.text }}
                     </h3>
                   } @else {
-                    <p class="text-slate-700 dark:text-slate-300 leading-relaxed text-[17px]">
+                    <p class="text-slate-700 leading-[1.8] text-[18px]">
                       @for (sentence of paragraph.sentences; track sentence.id) {
                         <span
                           [id]="'sentence-' + sentence.id"
@@ -154,9 +143,9 @@
           <div class="space-y-6 animate-pulse">
             @for (i of [1, 2, 3]; track i) {
               <div>
-                <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-3"></div>
-                <div class="h-3 bg-slate-100 dark:bg-slate-800 rounded w-full mb-2"></div>
-                <div class="h-3 bg-slate-100 dark:bg-slate-800 rounded w-5/6"></div>
+                <div class="h-4 bg-slate-200 rounded w-3/4 mb-3"></div>
+                <div class="h-3 bg-slate-100 rounded w-full mb-2"></div>
+                <div class="h-3 bg-slate-100 rounded w-5/6"></div>
               </div>
             }
           </div>
@@ -172,10 +161,10 @@
   >
     <!-- Expand button when minimized -->
     @if (controlsMinimized()) {
-      <div class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-4 py-3">
+      <div class="bg-white border-t border-slate-200 px-4 py-3">
         <div class="max-w-2xl mx-auto flex items-center justify-between gap-4">
           <!-- Mini progress -->
-          <div class="flex-1 h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+          <div class="flex-1 h-1 bg-slate-200 rounded-full overflow-hidden">
             <div
               class="h-full bg-emerald-500 rounded-full transition-all"
               [style.width.%]="progressPercent()"
@@ -184,7 +173,7 @@
 
           <!-- Quick Play -->
           <button
-            class="w-12 h-12 rounded-full bg-emerald-600 dark:bg-emerald-500 flex items-center justify-center text-white shadow-lg"
+            class="w-12 h-12 rounded-full bg-emerald-600 flex items-center justify-center text-white shadow-lg"
             (click)="togglePlayback()"
             [disabled]="isLoading()"
           >
@@ -197,7 +186,7 @@
 
           <!-- Expand -->
           <button
-            class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+            class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100"
             (click)="toggleControlsMinimized()"
           >
             <i class="pi pi-chevron-up text-lg"></i>
@@ -206,15 +195,15 @@
       </div>
     } @else {
       <!-- Full Player -->
-      <div class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-lg">
+      <div class="bg-white border-t border-slate-200 shadow-lg">
         <div class="max-w-2xl mx-auto px-4 py-4">
           <!-- Progress Bar -->
           <div class="mb-4">
-            <div class="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+            <div class="flex items-center gap-3 text-xs text-slate-500">
               <span class="w-10 text-right tabular-nums">{{ formatTime(currentTime()) }}</span>
               <div
                 #progressBar
-                class="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden cursor-pointer group"
+                class="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden cursor-pointer group"
                 (click)="onProgressBarClick($event)"
               >
                 <div
@@ -230,7 +219,7 @@
           <div class="flex items-center justify-center gap-3">
             <!-- Speed Pill -->
             <button
-              class="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              class="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
               (click)="onSpeedChange(playbackSpeed() >= 2 ? 0.5 : playbackSpeed() + 0.25)"
             >
               {{ playbackSpeed() }}x
@@ -238,14 +227,14 @@
 
             <!-- Skip Back -->
             <button
-              class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
               (click)="previousParagraph()"
             >
               <i class="pi pi-step-backward"></i>
             </button>
 
             <button
-              class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
               (click)="skipBack()"
             >
               <i class="pi pi-replay"></i>
@@ -253,7 +242,7 @@
 
             <!-- Main Play Button -->
             <button
-              class="w-16 h-16 rounded-full bg-emerald-600 dark:bg-emerald-500 flex items-center justify-center text-white shadow-lg hover:scale-105 active:scale-95 transition-transform mx-2"
+              class="w-16 h-16 rounded-full bg-emerald-600 flex items-center justify-center text-white shadow-lg hover:scale-105 active:scale-95 transition-transform mx-2"
               (click)="togglePlayback()"
               [disabled]="isLoading()"
             >
@@ -265,7 +254,7 @@
             </button>
 
             <button
-              class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
               (click)="skipForward()"
             >
               <i class="pi pi-forward"></i>
@@ -273,7 +262,7 @@
 
             <!-- Skip Forward -->
             <button
-              class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              class="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
               (click)="nextParagraph()"
             >
               <i class="pi pi-step-forward"></i>
@@ -281,7 +270,7 @@
 
             <!-- Voice Button -->
             <button
-              class="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5"
+              class="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors flex items-center gap-1.5"
               (click)="toggleVoicePanel()"
             >
               <i class="pi pi-user"></i>
@@ -294,13 +283,9 @@
             <button
               class="px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5"
               [class.bg-emerald-100]="autoScrollEnabled()"
-              [class.dark:bg-emerald-900/30]="autoScrollEnabled()"
               [class.text-emerald-700]="autoScrollEnabled()"
-              [class.dark:text-emerald-400]="autoScrollEnabled()"
               [class.bg-slate-100]="!autoScrollEnabled()"
-              [class.dark:bg-slate-800]="!autoScrollEnabled()"
               [class.text-slate-500]="!autoScrollEnabled()"
-              [class.dark:text-slate-400]="!autoScrollEnabled()"
               (click)="toggleAutoScroll()"
             >
               <i class="pi pi-arrows-v text-xs"></i>
@@ -310,13 +295,9 @@
             <button
               class="px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5"
               [class.bg-emerald-100]="continuousMode()"
-              [class.dark:bg-emerald-900/30]="continuousMode()"
               [class.text-emerald-700]="continuousMode()"
-              [class.dark:text-emerald-400]="continuousMode()"
               [class.bg-slate-100]="!continuousMode()"
-              [class.dark:bg-slate-800]="!continuousMode()"
               [class.text-slate-500]="!continuousMode()"
-              [class.dark:text-slate-400]="!continuousMode()"
               (click)="toggleContinuousMode()"
             >
               <i class="pi text-xs" [class.pi-sync]="continuousMode()" [class.pi-stop-circle]="!continuousMode()"></i>
@@ -324,7 +305,7 @@
             </button>
 
             <button
-              class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors"
               (click)="toggleControlsMinimized()"
               pTooltip="Minimize"
             >
@@ -345,7 +326,7 @@
   >
     <ng-template #header>
       <div class="flex items-center justify-between w-full px-2">
-        <span class="text-lg font-semibold text-slate-900 dark:text-white">Select Voice</span>
+        <span class="text-lg font-semibold">Select Voice</span>
       </div>
     </ng-template>
 
@@ -355,16 +336,12 @@
           <button
             class="p-4 rounded-2xl text-left transition-all"
             [class.bg-emerald-50]="selectedVoice() === voice.id"
-            [class.dark:bg-emerald-900/20]="selectedVoice() === voice.id"
             [class.border-2]="selectedVoice() === voice.id"
             [class.border-emerald-500]="selectedVoice() === voice.id"
             [class.bg-slate-50]="selectedVoice() !== voice.id"
-            [class.dark:bg-slate-800]="selectedVoice() !== voice.id"
             [class.border]="selectedVoice() !== voice.id"
             [class.border-slate-200]="selectedVoice() !== voice.id"
-            [class.dark:border-slate-700]="selectedVoice() !== voice.id"
             [class.hover:border-emerald-300]="selectedVoice() !== voice.id"
-            [class.dark:hover:border-emerald-700]="selectedVoice() !== voice.id"
             (click)="onVoiceChange(voice.id); voicePanelVisible.set(false)"
           >
             <div class="flex items-center gap-3">
@@ -373,16 +350,14 @@
                 [class.bg-emerald-500]="selectedVoice() === voice.id"
                 [class.text-white]="selectedVoice() === voice.id"
                 [class.bg-slate-200]="selectedVoice() !== voice.id"
-                [class.dark:bg-slate-700]="selectedVoice() !== voice.id"
                 [class.text-slate-500]="selectedVoice() !== voice.id"
-                [class.dark:text-slate-400]="selectedVoice() !== voice.id"
               >
                 <i class="pi pi-user"></i>
               </div>
               <div>
-                <p class="font-semibold text-slate-900 dark:text-white">{{ voice.name }}</p>
+                <p class="font-semibold">{{ voice.name }}</p>
                 @if (voice.description) {
-                  <p class="text-xs text-slate-500 dark:text-slate-400">{{ voice.description }}</p>
+                  <p class="text-xs text-slate-500">{{ voice.description }}</p>
                 }
               </div>
             </div>
@@ -406,8 +381,8 @@
   >
     <ng-template #header>
       <div class="flex items-center gap-3">
-        <i class="pi pi-list text-emerald-600 dark:text-emerald-400"></i>
-        <span class="font-semibold text-slate-900 dark:text-white">{{ hasToc() ? 'Contents' : 'Chapters' }}</span>
+        <i class="pi pi-list text-emerald-600"></i>
+        <span class="font-semibold">{{ hasToc() ? 'Contents' : 'Chapters' }}</span>
       </div>
     </ng-template>
 
@@ -419,14 +394,10 @@
               class="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all"
               [style.padding-left.rem]="0.75 + (entry.level - 1) * 0.5"
               [class.bg-emerald-50]="currentChapterIndex() === i"
-              [class.dark:bg-emerald-900/20]="currentChapterIndex() === i"
               [class.text-emerald-700]="currentChapterIndex() === i"
-              [class.dark:text-emerald-400]="currentChapterIndex() === i"
               [class.font-medium]="currentChapterIndex() === i || entry.level === 1"
               [class.text-slate-700]="currentChapterIndex() !== i"
-              [class.dark:text-slate-300]="currentChapterIndex() !== i"
               [class.hover:bg-slate-100]="currentChapterIndex() !== i"
-              [class.dark:hover:bg-slate-800]="currentChapterIndex() !== i"
               (click)="selectTocEntry(entry, i)"
             >
               <span class="line-clamp-2">{{ entry.title }}</span>
@@ -437,14 +408,10 @@
             <button
               class="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all"
               [class.bg-emerald-50]="currentChapterIndex() === i"
-              [class.dark:bg-emerald-900/20]="currentChapterIndex() === i"
               [class.text-emerald-700]="currentChapterIndex() === i"
-              [class.dark:text-emerald-400]="currentChapterIndex() === i"
               [class.font-medium]="currentChapterIndex() === i"
               [class.text-slate-700]="currentChapterIndex() !== i"
-              [class.dark:text-slate-300]="currentChapterIndex() !== i"
               [class.hover:bg-slate-100]="currentChapterIndex() !== i"
-              [class.dark:hover:bg-slate-800]="currentChapterIndex() !== i"
               (click)="selectChapter(i)"
             >
               <span class="line-clamp-2">{{ chapter.title }}</span>

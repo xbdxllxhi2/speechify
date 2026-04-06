@@ -14,6 +14,7 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { ApiService } from '../../core/services/api.service';
 import { StorageService } from '../../core/services/storage.service';
+import { AudioService } from '../../core/services/audio.service';
 import { StoredDocument, PlaybackProgress } from '../../core/models/document.model';
 
 @Component({
@@ -37,9 +38,13 @@ import { StoredDocument, PlaybackProgress } from '../../core/models/document.mod
 export class LibraryComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly storage = inject(StorageService);
+  private readonly audioService = inject(AudioService);
   private readonly router = inject(Router);
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
+
+  // Expose for template
+  hasActivePlayback = this.audioService.hasActivePlayback;
 
   documents = signal<StoredDocument[]>([]);
   isLoading = signal(false);
